@@ -6,6 +6,12 @@ package "git" do
   action :install
 end
 
+package "redis" do
+  action :install
+end
+
+=begin
+
 
 version = '2.8.19'
 bash "compile_redis_source" do
@@ -65,3 +71,5 @@ file "#{Chef::Config[:file_cache_path]}/redis_lock1" do
   mode "0755"
   action :create
 end
+
+=end
