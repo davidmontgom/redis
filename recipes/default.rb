@@ -7,11 +7,11 @@ package "git" do
 end
 
 
-version = '2.6.12'
+version = '2.8.19'
 bash "compile_redis_source" do
   cwd "/tmp/"
   code <<-EOH
-wget http://redis.googlecode.com/files/redis-#{version}.tar.gz
+wget http://download.redis.io/releases/redis-#{version}.tar.gz
 tar -xvf redis-#{version}.tar.gz
 cd redis-#{version}
 make && make install
