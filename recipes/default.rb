@@ -6,9 +6,30 @@ package "git" do
   action :install
 end
 
+
+directory "/data/redis" do
+    action :create
+end
+
 package "redis-server" do
   action :install
 end
+
+service "redis-server" do
+  supports :start => true, :stop => true, :restart => true
+  #not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
+end
+
+template "reids.conf" do
+  path "/etc/redis/redis.conf"
+  source "redis.conf.erb"
+  owner "root"
+  group "root"
+  mode "0644"
+  notifies :start, resources(:service => "redis-server")
+  #not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
+end
+
 
 =begin
 
