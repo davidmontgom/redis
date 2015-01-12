@@ -26,7 +26,7 @@ template "reids.conf" do
   owner "root"
   group "root"
   mode "0644"
-  notifies :start, resources(:service => "redis-server")
+  notifies :restart, resources(:service => "redis-server")
   #not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
 end
 
