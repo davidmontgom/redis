@@ -6,6 +6,17 @@ package "git" do
   action :install
 end
 
+bash "restart_sysctl_redis" do
+  user "root"
+  code <<-EOH
+    sysctl -w fs.file-max=100000
+    sysctl -p /etc/sysctl.conf
+    touch /var/chef/cache/sysctl_redis.lock
+  EOH
+  action :run  
+  not_if {File.exists?("/var/chef/cache/sysctl_redis.lock")}
+end
+
 
 directory "/data/redis" do
     action :create
