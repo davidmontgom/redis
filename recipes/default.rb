@@ -6,7 +6,7 @@ package "git" do
   action :install
 end
 
-bash "restart_sysctl_redis" do
+bash "restart_sysctl_redis" do 
   user "root"
   code <<-EOH
     sysctl -w fs.file-max=100000
