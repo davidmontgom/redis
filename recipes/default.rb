@@ -6,7 +6,20 @@ package "git" do
   action :install
 end
 
+
+directory "/data" do
+    owner 'root'
+    group 'root'
+    mode "0660"
+    recursive true
+    action :create
+end
+
 directory "/data/redis" do
+    owner 'root'
+    group 'root'
+    mode "0660"
+    #recursive true
     action :create
 end
 
