@@ -10,7 +10,7 @@ end
 directory "/data" do
     owner 'root'
     group 'root'
-    mode "0660"
+    mode "0777"
     recursive true
     action :create
 end
@@ -18,7 +18,7 @@ end
 directory "/data/redis" do
     owner 'root'
     group 'root'
-    mode "0660"
+    mode "0777"
     #recursive true
     action :create
 end
