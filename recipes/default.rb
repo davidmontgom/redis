@@ -23,6 +23,7 @@ directory "/data/redis" do
     action :create
 end
 
+=begin
 package "redis-server" do
   action :install
 end
@@ -31,6 +32,7 @@ service "redis-server" do
   supports :start => true, :stop => true, :restart => true
   #not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
 end
+
 
 
 template "reids.conf" do
@@ -42,10 +44,11 @@ template "reids.conf" do
   notifies :restart, resources(:service => "redis-server")
   #not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
 end
+=end
 
 
 
-=begin
+
 
 
 version = '2.8.19'
@@ -71,7 +74,7 @@ file "#{Chef::Config[:file_cache_path]}/redis_lock" do
 end
 
 
-service "redis_6369" do
+service "redis_6379" do
   supports :start => true, :stop => true
   action :stop
   not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
@@ -86,11 +89,11 @@ end
 
 template "6379.conf" do
   path "/etc/redis/6379.conf"
-  source "6379default.conf.erb"
+  source "6379.conf.erb"
   owner "root"
   group "root"
   mode "0644"
-  notifies :start, resources(:service => "redis_6369")
+  notifies :start, resources(:service => "redis_6379")
   not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
 end
 
@@ -107,4 +110,4 @@ file "#{Chef::Config[:file_cache_path]}/redis_lock1" do
   action :create
 end
 
-=end
+\
