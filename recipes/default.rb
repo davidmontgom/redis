@@ -32,7 +32,7 @@ service "redis-server" do
   #not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
 end
 
-=begin
+
 template "reids.conf" do
   path "/etc/redis/redis.conf"
   source "redis.conf.erb"
@@ -42,7 +42,7 @@ template "reids.conf" do
   notifies :restart, resources(:service => "redis-server")
   #not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
 end
-=end
+
 
 
 =begin
