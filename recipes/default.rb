@@ -89,11 +89,11 @@ end
 
 template "6379.conf" do
   path "/etc/redis/6379.conf"
-  source "6379.conf.erb"
+  source "6379default.conf.erb"
   owner "root"
   group "root"
   mode "0644"
-  notifies :start, resources(:service => "redis_6379")
+  notifies :start, resources(:service => "redis_6369")
   not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
 end
 
