@@ -23,35 +23,8 @@ directory "/data/redis" do
     action :create
 end
 
-=begin
-package "redis-server" do
-  action :install
-end
 
-service "redis-server" do
-  supports :start => true, :stop => true, :restart => true
-  #not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
-end
-
-
-
-template "reids.conf" do
-  path "/etc/redis/redis.conf"
-  source "redis.conf.erb"
-  owner "root"
-  group "root"
-  mode "0644"
-  notifies :restart, resources(:service => "redis-server")
-  #not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
-end
-=end
-
-
-
-
-
-
-version = '2.8.19'
+version = '3.0.0'
 bash "compile_redis_source" do
   cwd "/tmp/"
   code <<-EOH
@@ -89,7 +62,7 @@ end
 
 template "6379.conf" do
   path "/etc/redis/6379.conf"
-  source "6379default.conf.erb"
+  source "redis-3-6379.conf.erb"
   owner "root"
   group "root"
   mode "0644"
@@ -97,16 +70,14 @@ template "6379.conf" do
   not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
 end
 
-execute "start-redis" do
-  command "service redis_6379 start"
-  action :run
-  not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
-end
 
-file "#{Chef::Config[:file_cache_path]}/redis_lock1" do
-  owner "root"
-  group "root"
-  mode "0755"
-  action :create
+
+bash "start-redis" do
+  cwd "/tmp/"
+  code <<-EOH
+    service redis_6379 start
+    touch #{Chef::Config[:file_cache_path]}/redis_lock1
+  EOH
+  not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
 end
 
