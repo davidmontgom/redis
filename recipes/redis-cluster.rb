@@ -6,6 +6,17 @@ package "git" do
   action :install
 end
 
+bash "set_limits" do
+  cwd "/tmp/"
+  code <<-EOH
+    ulimit -Sn 100000
+    sysctl -w fs.file-max=100000
+    touch #{Chef::Config[:file_cache_path]}/redis_sysctl.lock
+  EOH
+  not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_sysctl.lock")}
+end
+
+
 
 directory "/data" do
     owner 'root'
