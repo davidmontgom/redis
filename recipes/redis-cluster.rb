@@ -77,7 +77,7 @@ template "6379.conf" do
   owner "root"
   group "root"
   mode "0644"
-  notifies :start, resources(:service => "redis_6369")
+  notifies :start, resources(:service => "redis_6379")
   not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_lock1")}
 end
 
