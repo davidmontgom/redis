@@ -1,5 +1,5 @@
-[program:chef-client]
-command = chef-client -i 240 -s 0 -f -N <%=node.name%>
+[program:sentinal]
+command = /var/redis-3.0.0/src/redis-sentinel /var/sentinal.conf
 autostart=true
 autorestart=true
 
@@ -7,13 +7,14 @@ stopsignal=KILL
 stopasgroup = true
 killasgroup = true
 
-stdout_logfile=/tmp/chef-client.log
-stdout_logfile_maxbytes=100MB
-stdout_logfile_backups=10
+stdout_logfile=/tmp/sentinal.log
+stdout_logfile_maxbytes=1MB
+stdout_logfile_backups=1
 
-stderr_logfile = /tmp/chef-client.err
-stderr_logfile_maxbytes=10MB
-stderr_logfile_backups=10
+stderr_logfile = /tmp/sentinal.err
+stderr_logfile_maxbytes=1MB
+stderr_logfile_backups=1
 
-[group:chef-client_server]
-programs=chef-client
+[group:sentinal_server]
+programs=sentinal
+
