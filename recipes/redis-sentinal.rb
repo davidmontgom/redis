@@ -36,9 +36,22 @@ bash "compile_redis_source" do
   code <<-EOH
 wget http://download.redis.io/releases/redis-#{version}.tar.gz
 tar -xvf redis-#{version}.tar.gz
+cd redis-#{version}
+make
 EOH
   not_if {File.exists?("/var/redis-#{version}")}
 end
+
+template "/etc/supervisor/conf.d/sentinal.conf" do
+  path "/etc/supervisor/conf.d/sentinal.conf"
+  source "supervisord.sentinal.conf.erb"
+  owner "root"
+  group "root"
+  mode "0755"
+  #variables({:version => '#{version}')
+  notifies :restart, resources(:service => "supervisord")
+end
+service "supervisord"
 
 
 
