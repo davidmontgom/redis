@@ -6,6 +6,20 @@ package "git" do
   action :install
 end
 
+cookbook_file "/var/sentinal-master.py" do
+  source "sentinal-master.py"
+  mode 00744
+end
+
+bash "sentinal-master" do
+  cwd "/tmp/"
+  code <<-EOH
+    /usr/bin/python /var/sentinal-master.py
+    touch "#{Chef::Config[:file_cache_path]}/sentinal.lock"
+  EOH
+  not_if {File.exists?("#{Chef::Config[:file_cache_path]}/sentinal.lock")}
+end
+
 bash "set_limits" do
   cwd "/tmp/"
   code <<-EOH
@@ -25,3 +39,6 @@ tar -xvf redis-#{version}.tar.gz
 EOH
   not_if {File.exists?("/var/redis-#{version}")}
 end
+
+
+
