@@ -67,21 +67,21 @@ template "/etc/supervisor/conf.d/sentinal.conf" do
   notifies :restart, resources(:service => "supervisord")
 end
 
-=begin
-execute "restart_supervisorctl_sentinal-python" do
-  command "sudo supervisorctl restart sentinal_python_server:"
+
+execute "restart_supervisorctl_sentinal-zookeeper" do
+  command "sudo supervisorctl restart sentinal_zookeeper_server:"
   action :nothing
 end
 
-template "/etc/supervisor/conf.d/sentinal-python.conf" do
-  path "/etc/supervisor/conf.d/sentinal-python.conf"
-  source "supervisord.sentinal-python.conf.erb"
+template "/etc/supervisor/conf.d/sentinal-zookeeper.conf" do
+  path "/etc/supervisor/conf.d/sentinal-zookeeper.conf"
+  source "supervisord.sentinal-zookeeper.conf.erb"
   owner "root"
   group "root"
   mode "0755"
-  notifies :run, "execute[restart_supervisorctl_sentinal-python]"
+  notifies :run, "execute[restart_supervisorctl_sentinal-zookeeper]"
 end
-=end
+
 service "supervisord"
 
 

@@ -11,7 +11,7 @@ from yaml import Loader, Dumper
 f = open(SETTINGS_FILE)
 meta_parms = load(f, Loader=Loader)
 f.close()
-print meta_parms
+
 
 running_in_pydev = 'PYDEV_CONSOLE_ENCODING' in os.environ
 if running_in_pydev==True:
