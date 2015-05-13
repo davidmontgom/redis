@@ -20,8 +20,8 @@ cookbook_file "/var/sentinal-master.py" do
   mode 00744
 end
 
-cookbook_file "sentinal-zookeeper.py" do
-  source "sentinal-master.py"
+cookbook_file "/var/sentinal-zookeeper.py" do
+  source "sentinal-zookeeper.py"
   mode 00744
 end
 

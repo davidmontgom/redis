@@ -24,16 +24,24 @@ zk = zc.zk.ZooKeeper('1-zk-aws-development-sydney.gen3media.io:2181')
 
 path = '/sentinel/'
 service = 'redis-sentinel'
+
+output = [p.name() for p in psutil.get_process_list()]
+if service in output: 
+    data = ''
+    if zk.exists(path)==None:
+        zk.create_recursive(path,data,zc.zk.OPEN_ACL_UNSAFE)
+    zk.register(path, (ip, 8080))
+    #addresses = zk.children(path)
+else:
+    exit()
+
+
 while True:
     running=False
     output = [p.name() for p in psutil.get_process_list()]
     if service in output: 
-        data = ''
-        if zk.exists(path)==None:
-            zk.create_recursive(path,data,zc.zk.OPEN_ACL_UNSAFE)
-        zk.register(path, (ip, 8080))
-        #addresses = zk.children(path)
         time.sleep(2)
+        print 'running'
     else:
         print 'proccess is not running'
         exit()
