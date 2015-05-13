@@ -20,6 +20,12 @@ cookbook_file "/var/sentinal-master.py" do
   mode 00744
 end
 
+cookbook_file "sentinal-zookeeper.py" do
+  source "sentinal-master.py"
+  mode 00744
+end
+
+
 bash "sentinal-master" do
   cwd "/tmp/"
   code <<-EOH
