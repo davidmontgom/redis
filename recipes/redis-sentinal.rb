@@ -6,6 +6,15 @@ package "git" do
   action :install
 end
 
+easy_install_package "zc.zk" do
+  action :install
+end
+
+easy_install_package "psutil" do
+  action :install
+end
+
+
 cookbook_file "/var/sentinal-master.py" do
   source "sentinal-master.py"
   mode 00744
@@ -52,6 +61,7 @@ template "/etc/supervisor/conf.d/sentinal.conf" do
   notifies :restart, resources(:service => "supervisord")
 end
 
+=begin
 execute "restart_supervisorctl_sentinal-python" do
   command "sudo supervisorctl restart sentinal_python_server:"
   action :nothing
@@ -65,6 +75,7 @@ template "/etc/supervisor/conf.d/sentinal-python.conf" do
   mode "0755"
   notifies :run, "execute[restart_supervisorctl_sentinal-python]"
 end
+=end
 service "supervisord"
 
 
