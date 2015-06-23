@@ -35,7 +35,7 @@ directory "/data/redis" do
 end
 
 
-version = '3.0.0'
+version = '3.0.2'
 bash "compile_redis_source" do
   cwd "/tmp/"
   code <<-EOH
