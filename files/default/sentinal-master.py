@@ -140,8 +140,8 @@ def find_master():
     
 # sentinal_conf = create_sentinal_config(shard_master_hash)
 # exit()
-find_master()
-exit()
+# print find_master()
+# exit()
 
 
 
