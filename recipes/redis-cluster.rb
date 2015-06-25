@@ -6,6 +6,12 @@ package "git" do
   action :install
 end
 
+package "python-libcloud" do
+  action :install
+end
+
+
+
 bash "set_limits" do
   cwd "/tmp/"
   code <<-EOH
