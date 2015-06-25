@@ -191,5 +191,7 @@ while True:
         f.close()
         #os.system('/usr/local/bin/supervisorctl restart all')
     print 'waiting'
+    sys.stdout.flush()
+    sys.stderr.flush()
     time.sleep(20)
    
