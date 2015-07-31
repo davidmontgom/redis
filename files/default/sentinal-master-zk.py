@@ -121,6 +121,8 @@ def find_master():
 while True:
     
     
+    shard_identifier = parms[datacenter][environment][location]['redis']['shard_identifier']
+    shard_count = parms[datacenter][environment][location]['redis']['shard_count']
     
     shard_master = {}
     zk_host_list = open('/var/zookeeper_hosts.json').readlines()[0]
@@ -130,19 +132,22 @@ while True:
         zk_host_list[i]=zk_host_list[i]+':2181' 
     zk_host_str = ','.join(zk_host_list)
     zk = zc.zk.ZooKeeper(zk_host_str)
-    node = 'redis-%s-%s-%s' % (datacenter,environment,location)
-    path = '/%s/' % (node)
-    data = ''
-    addresses = zk.children(path)
-    if zk.exists(path):
-        shard = 1
-        ip_address_list = list(sorted(addresses))
-        for ip_address in ip_address_list:
-            r = redis.StrictRedis(host=ip_address,port=6379)
-            role = r.info()
-            if role['role']=='master':
-                shard_master[shard]=ip_address
+    
+    for sc in xrange(shard_count):
+        node = 'redis-%s-%s-%s' % (datacenter,environment,location)
+        path = '/%s-%s%s/' % (node,shard_identifier,sc+1)
+    
+        data = ''
+        addresses = zk.children(path)
+        if zk.exists(path):
+            ip_address_list = list(sorted(addresses))
+            for ip_address in ip_address_list:
+                r = redis.StrictRedis(host=ip_address,port=6379)
+                role = r.info()
+                if role['role']=='master':
+                    shard_master[sc+1]=ip_address
     shard_master_hash = shard_master
+
 
     if running_in_pydev==True:
         sentinal_conf_file = '/tmp/sentinal.conf'
