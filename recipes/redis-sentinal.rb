@@ -24,7 +24,7 @@ cookbook_file "/var/sentinal-master.py" do
   mode 00744
 end
 
-cookbook_file "/var/sentinal-zookeeper.py" do
+cookbook_file "/var/sentinal-zookeeper-zk.py" do
   source "sentinal-zookeeper.py"
   mode 00744
 end
@@ -33,7 +33,7 @@ end
 bash "sentinal-master" do
   cwd "/tmp/"
   code <<-EOH
-    /usr/bin/python /var/sentinal-master.py
+    /usr/bin/python /var/sentinal-master-zk.py
     touch "#{Chef::Config[:file_cache_path]}/sentinal.lock"
   EOH
   not_if {File.exists?("#{Chef::Config[:file_cache_path]}/sentinal.lock")}
