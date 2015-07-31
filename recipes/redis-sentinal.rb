@@ -14,6 +14,10 @@ easy_install_package "psutil" do
   action :install
 end
 
+easy_install_package "paramiko" do
+  action :install
+end
+
 
 cookbook_file "/var/sentinal-master.py" do
   source "sentinal-master.py"
