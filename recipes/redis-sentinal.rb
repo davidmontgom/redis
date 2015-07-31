@@ -77,6 +77,11 @@ execute "restart_supervisorctl_sentinal-zookeeper" do
   action :nothing
 end
 
+execute "restart_supervisorctl_sentinal-master" do
+  command "sudo supervisorctl restart sentinal_master_server:"
+  action :nothing
+end
+
 template "/etc/supervisor/conf.d/sentinal-zookeeper.conf" do
   path "/etc/supervisor/conf.d/sentinal-zookeeper.conf"
   source "supervisord.sentinal-zookeeper.conf.erb"
@@ -84,6 +89,15 @@ template "/etc/supervisor/conf.d/sentinal-zookeeper.conf" do
   group "root"
   mode "0755"
   notifies :run, "execute[restart_supervisorctl_sentinal-zookeeper]"
+end
+
+template "/etc/supervisor/conf.d/sentinal-master.conf" do
+  path "/etc/supervisor/conf.d/sentinal-master.conf"
+  source "supervisord.sentinal-master.conf.erb"
+  owner "root"
+  group "root"
+  mode "0755"
+  notifies :run, "execute[restart_supervisorctl_sentinal-master]"
 end
 
 service "supervisord"
