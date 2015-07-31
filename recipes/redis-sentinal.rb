@@ -6,6 +6,31 @@ package "git" do
   action :install
 end
 
+
+
+
+
+
+
+easy_install_package "boto" do
+  action :install
+end
+easy_install_package "pytz" do
+  action :install
+end
+easy_install_package "redis" do
+  action :install
+end
+easy_install_package "stopwatch" do
+  action :install
+end
+easy_install_package "timeout" do
+  action :install
+end
+easy_install_package "apache-libcloud" do
+  action :install
+end
+
 easy_install_package "zc.zk" do
   action :install
 end
@@ -49,6 +74,8 @@ bash "set_limits" do
   not_if {File.exists?("#{Chef::Config[:file_cache_path]}/redis_sysctl.lock")}
 end
 
+
+
 version = '3.0.0'
 bash "compile_redis_source" do
   cwd "/var/"
@@ -82,6 +109,7 @@ execute "restart_supervisorctl_sentinal-master" do
   action :nothing
 end
 
+=begin
 template "/etc/supervisor/conf.d/sentinal-zookeeper.conf" do
   path "/etc/supervisor/conf.d/sentinal-zookeeper.conf"
   source "supervisord.sentinal-zookeeper.conf.erb"
@@ -90,6 +118,7 @@ template "/etc/supervisor/conf.d/sentinal-zookeeper.conf" do
   mode "0755"
   notifies :run, "execute[restart_supervisorctl_sentinal-zookeeper]"
 end
+=end
 
 template "/etc/supervisor/conf.d/sentinal-master.conf" do
   path "/etc/supervisor/conf.d/sentinal-master.conf"
