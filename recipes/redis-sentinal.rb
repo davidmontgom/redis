@@ -19,15 +19,15 @@ easy_install_package "paramiko" do
 end
 
 
-cookbook_file "/var/sentinal-master.py" do
-  source "sentinal-master.py"
+cookbook_file "/var/sentinal-master-zk.py" do
+  source "sentinal-master-zk.py"
   mode 00744
 end
 
-cookbook_file "/var/sentinal-zookeeper-zk.py" do
+cookbook_file "/var/sentinal-zookeeper.py" do
   source "sentinal-zookeeper.py"
   mode 00744
-end
+end 
 
 
 bash "sentinal-master" do
