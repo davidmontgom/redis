@@ -29,6 +29,8 @@ import logging
 logging.basicConfig()
 
 
+
+
 import paramiko
 username='#{username}'
 zookeeper_hosts = '#{zk_hosts}'
@@ -36,17 +38,17 @@ zk_host_list = '#{zk_hosts}'.split(',')
 for i in xrange(len(zk_host_list)):
     zk_host_list[i]=zk_host_list[i]+':2181' 
 zk_host_str = ','.join(zk_host_list)
-zk = zc.zk.ZooKeeper(zk_host_str)
-
+zk = zc.zk.ZooKeeper(zk_host_str) 
 ip_address_list = zookeeper_hosts.split(',')
-node = 'redis-#{datacenter}-#{node.chef_environment}-#{location}'
+shard = open('/var/shard.txt').readlines()[0].strip()
+node = '#{datacenter}-redis-#{location}-#{node.chef_environment}-%s' % (shard)
 path = '/%s/' % (node)
 if zk.exists(path):
     addresses = zk.children(path)
     redis_servers = list(set(addresses))
     print redis_servers
     for ip_address in redis_servers:
-        keypair_path = '/root/.ssh/id_rsa_rr_git'
+        keypair_path = '/root/.ssh/#{keypair}'
         key = paramiko.RSAKey.from_private_key_file(keypair_path)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -62,14 +64,14 @@ if zk.exists(path):
         os.system("sudo ufw allow from %s to any port 6379" % ip_address)
         os.system("sudo ufw allow from %s to any port 16379" % ip_address)
         
-node = 'sentinal-#{datacenter}-#{node.chef_environment}-#{location}'
+node = '#{datacenter}-sentinal-#{location}-#{node.chef_environment}'
 path = '/%s/' % (node)
 if zk.exists(path):
     addresses = zk.children(path)
     redis_servers = list(set(addresses))
     print redis_servers
     for ip_address in redis_servers:
-        keypair_path = '/root/.ssh/id_rsa_rr_git'
+        keypair_path = '/root/.ssh/#{keypair}'
         key = paramiko.RSAKey.from_private_key_file(keypair_path)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -106,14 +108,14 @@ import paramiko
 username='#{username}'
 zookeeper_hosts = '#{zk_hosts}'
 ip_address_list = zookeeper_hosts.split(',')
-node = 'sentinal-#{datacenter}-#{node.chef_environment}-#{location}'
+node = '#{datacenter}-sentinal-#{location}-#{node.chef_environment}'
 path = '/%s/' % (node)
 if zk.exists(path):
     addresses = zk.children(path)
     redis_servers = list(set(addresses))
     print redis_servers
     for ip_address in redis_servers:
-        keypair_path = '/root/.ssh/id_rsa_rr_git'
+        keypair_path = '/root/.ssh/#{keypair}'
         key = paramiko.RSAKey.from_private_key_file(keypair_path)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -126,14 +128,15 @@ if zk.exists(path):
         ssh.close()
         os.system("sudo ufw allow from %s to any port 26379" % ip_address)
    
-node = 'redis-#{datacenter}-#{node.chef_environment}-#{location}'
+shard = open('/var/shard.txt').readlines()[0].strip()
+node = '#{datacenter}-redis-#{location}-#{node.chef_environment}-%s' % (shard)
 path = '/%s/' % (node)
 if zk.exists(path):
     addresses = zk.children(path)
     redis_servers = list(set(addresses))
     print redis_servers
     for ip_address in redis_servers:
-        keypair_path = '/root/.ssh/id_rsa_rr_git'
+        keypair_path = '/root/.ssh/#{keypair}'
         key = paramiko.RSAKey.from_private_key_file(keypair_path)
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())

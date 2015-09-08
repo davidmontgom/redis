@@ -69,7 +69,6 @@ def find_master():
     #existing_domains = {'1.shard1.redis.do.development.sf.feed-galaxy.com.': ['45.55.22.72']}
     domain = parms[datacenter][environment][location]['redis']['domain']
     tld = domain.split('.')[-2] + '.' + domain.split('.')[-1]
-    
     shard_identifier = parms[datacenter][environment][location]['redis']['shard_identifier']
     shard_count = parms[datacenter][environment][location]['redis']['shard_count']
     requried_count = parms[datacenter][environment][location]['redis']['requried_count']
