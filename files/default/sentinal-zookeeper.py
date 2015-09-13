@@ -19,7 +19,7 @@ if running_in_pydev==True:
 else:
     ip = meta_parms['ipaddress']  
 
-zk = zc.zk.ZooKeeper('1-zk-aws-development-sydney.gen3media.io:2181')
+zk = zc.zk.ZooKeeper('1-zk-aws-development:2181')
 
 
 path = '/sentinel/'

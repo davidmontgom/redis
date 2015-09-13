@@ -2,41 +2,60 @@
 1) Find all masters
 2) Format sentinal.conf in /var incase sentinal restarts
 3) Need to create a checksum
-4) Rstart supervisr 
+4) Restart supervisr 
 """
 import time
 import sys
 import os
 import hashlib
-
 import zc.zk
+import redis
 import logging #https://kazoo.readthedocs.org/en/latest/basic_usage.html
 logging.basicConfig()
-
-
 running_in_pydev = 'PYDEV_CONSOLE_ENCODING' in os.environ
-
 SETTINGS_FILE='/etc/ec2/meta_data.yaml'
 from yaml import load, dump
 from yaml import Loader, Dumper
 f = open(SETTINGS_FILE)
 meta_parms = load(f, Loader=Loader)
 f.close()
+environment = meta_parms['environment']
+location = meta_parms['location']
+datacenter = meta_parms['datacenter']
 
-sys.path.append(meta_parms['class_path'])
-import utilities as util
-import ec2Utilities as ec2u
-import cloudUtilities as cu
-try:
-    import doUtilities as dou
-except:
-    pass
-import redis
-parms = util.getParms() 
+zk_host_list = open('/var/zookeeper_hosts.json').readlines()[0]
+zk_host_list = zk_host_list.split(',')
 
-environment = parms['environment']
-location = parms['location']
-datacenter = parms['datacenter']
+#zk_host_list =['1.zk.do.development.ny.forexhui.com']
+
+#zk_host_list = '1.zk.do.development.ny.forexhui.com'
+for i in xrange(len(zk_host_list)):
+    zk_host_list[i]=zk_host_list[i]+':2181' 
+zk_host_str = ','.join(zk_host_list)
+
+zk = zc.zk.ZooKeeper(zk_host_str)
+
+ #addresses = zk.children('/')
+this_tree = zk.export_tree()
+tree = this_tree.splitlines()
+#tree = [u'/do-mysql-ny-development', u'/do-redis-ny-development', u'/do-redis-ny-development-shard1', u'/do-sentinal-ny-development', u'/do-zookeeper-ny-development', u'']
+shard_list = []
+for t in tree:
+    if t.find('shard')>=0 and t.find('redis')>=0:
+        shard_list.append(str(t))     
+print shard_list
+
+shard_ip_hash = {}
+for shard in shard_list:
+    addresses = zk.children(shard)
+    print list(addresses)
+    shard_ip_hash[shard]=list(set(addresses))
+
+print shard_ip_hash
+#   
+# sys.path.append(meta_parms['class_path'])
+# import utilities as util
+# parms = util.getParms() 
 
 
 def create_sentinal_config(shard_master_hash):
@@ -44,110 +63,32 @@ def create_sentinal_config(shard_master_hash):
     conf = ''
     for shard,master in shard_master_hash.iteritems():
         temp = """
-sentinel monitor shard%s %s 6379 1
-sentinel down-after-milliseconds shard%s 60000
-sentinel failover-timeout shard%s 180000
-sentinel parallel-syncs shard%s 1
+sentinel monitor %s %s 6379 1
+sentinel down-after-milliseconds %s 60000
+sentinel failover-timeout %s 180000
+sentinel parallel-syncs %s 1
         """ % (shard,master,shard,shard,shard)
         conf = conf + temp
     return conf
 
-def find_master():
-    """
-    Get master from r53 by shard.  Not valid redis server unless in r53
-    This will be used to create the config file for sentinal servers
-    """
-    
-    domain = parms[datacenter][environment][location]['redis']['domain']
-    shard_identifier = parms[datacenter][environment][location]['redis']['shard_identifier']
-    shard_count = parms[datacenter][environment][location]['redis']['shard_count']
-    requried_count = parms[datacenter][environment][location]['redis']['requried_count']
-    public_domain = parms[datacenter][environment][location]['redis']['public_domain']
-    domain = domain.split('.')
-    if running_in_pydev ==True  and public_domain:
-        public_domain = '%s-public.%s.%s' % (domain[0],domain[1],domain[2])  
 
-    domain = '%s.%s.%s' % (domain[0],domain[1],domain[2]) 
-
-    existing_domains = ec2u.getExistingSubdomains(aws_access_key_id,aws_secret_access_key,route53_zone_id)
-    shard_hash = {}
-    shard_hash_public={}
-    for shard in xrange(shard_count):
-        temp = {}
-        for count in xrange(requried_count):
-            t = "%s-%s%s-%s" % (count+1,shard_identifier,shard+1,domain)
-            if existing_domains.has_key(t+'.'):
-                temp[t]=existing_domains[t+'.'][0]
-        if temp:
-            shard_hash[shard+1]=temp
-        
-        #This is only because of aws and running local
-        if running_in_pydev==True and public_domain:
-            temp = {}
-            for count in xrange(requried_count):
-                t = "%s-%s%s-%s" % (count+1,shard_identifier,shard+1,public_domain)
-                if existing_domains.has_key(t+'.'):
-                    temp[t]=existing_domains[t+'.'][0]
-            if temp:
-                shard_hash_public[shard+1]=temp
-
-    shard_master = {}
-    if running_in_pydev==True and public_domain:
-        for shard,domains in shard_hash_public.iteritems():
-            master=None
-            for domain,ipaddress in domains.iteritems():
-                try:
-                    r = redis.StrictRedis(host=ipaddress,port=6379)
-                    role = r.info()
-                    #pprint(role)
-                    if role['role']=='master':
-                        ipaddress = shard_hash[shard][domain.replace('-public','').strip()]
-                        shard_master[shard]=ipaddress
-                except:
-                    print 'master error'
-    else:
-        for shard,domains in shard_hash.iteritems():
-            master=None
-            for domain,ipaddress in domains.iteritems():
-                r = redis.StrictRedis(host=ipaddress,port=6379)
-                role = r.info()
-                #pprint(role)
-                if role['role']=='master':
-                    shard_master[shard]=ipaddress
-    #always return private
-    return shard_master
-    
 
 while True:
     
-    
-    shard_identifier = parms[datacenter][environment][location]['redis']['shard_identifier']
-    shard_count = parms[datacenter][environment][location]['redis']['shard_count']
-    
     shard_master = {}
-    zk_host_list = open('/var/zookeeper_hosts.json').readlines()[0]
-    #zk_host_list = '1.zk.sp.development.central.govspring.com'
-    zk_host_list = zk_host_list.split(',')
-    for i in xrange(len(zk_host_list)):
-        zk_host_list[i]=zk_host_list[i]+':2181' 
-    zk_host_str = ','.join(zk_host_list)
-    zk = zc.zk.ZooKeeper(zk_host_str)
-    
-    for sc in xrange(shard_count):
-        node = 'redis-%s-%s-%s' % (datacenter,environment,location)
-        path = '/%s-%s%s/' % (node,shard_identifier,sc+1)
-    
-        data = ''
-        addresses = zk.children(path)
-        if zk.exists(path):
-            ip_address_list = list(sorted(addresses))
-            for ip_address in ip_address_list:
-                r = redis.StrictRedis(host=ip_address,port=6379)
-                role = r.info()
-                if role['role']=='master':
-                    shard_master[sc+1]=ip_address
+    for shard, ip_address_list in shard_ip_hash.iteritems():
+        for ip_address in ip_address_list:
+            print ip_address
+            r = redis.StrictRedis(host=ip_address,port=6379)
+            role = r.info()
+            if role['role']=='master':
+                shard_name = shard.split('-')[-1]
+                shard_master[shard_name]=ip_address
+                master_ip_address = ip_address
+                break
     shard_master_hash = shard_master
-
+    
+    print shard_master
 
     if running_in_pydev==True:
         sentinal_conf_file = '/tmp/sentinal.conf'

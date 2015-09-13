@@ -6,12 +6,6 @@ package "git" do
   action :install
 end
 
-
-
-
-
-
-
 easy_install_package "boto" do
   action :install
 end
