@@ -11,6 +11,18 @@ keypair=db[node.chef_environment][location]["ssh"]["keypair"]
 username=db[node.chef_environment][location]["ssh"]["username"]
 
 
+easy_install_package "zc.zk" do
+  action :install
+end
+
+easy_install_package "paramiko" do
+  action :install
+end
+
+easy_install_package "redis" do
+  action :upgrade
+end
+
 if datacenter!='local' and server_type=='redis'
   script "add_slave" do
     interpreter "python"
@@ -55,7 +67,7 @@ if sentinal_hosts_list:
               syncing = False
           time.sleep(3)
       print 'slave is connected'
-      os.system('touch #{Chef::Config[:file_cache_path]}/add_slave.lock')
+os.system('touch #{Chef::Config[:file_cache_path]}/add_slave.lock')
 PYCODE
 not_if {File.exists?("#{Chef::Config[:file_cache_path]}/add_slave.lock")}
   end
