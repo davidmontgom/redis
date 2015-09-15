@@ -48,7 +48,7 @@ cookbook_file "/var/sentinal-zookeeper.py" do
   mode 00744
 end 
 
-
+=begin
 bash "sentinal-master" do
   cwd "/tmp/"
   code <<-EOH
@@ -57,6 +57,7 @@ bash "sentinal-master" do
   EOH
   not_if {File.exists?("#{Chef::Config[:file_cache_path]}/sentinal.lock")}
 end
+=end
 
 bash "set_limits" do
   cwd "/tmp/"
