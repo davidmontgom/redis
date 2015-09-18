@@ -32,6 +32,7 @@ import zc.zk
 import logging 
 logging.basicConfig()
 import paramiko
+import time
 username='#{username}'
 zookeeper_hosts = '#{zk_hosts}'
 zk_host_list = '#{zk_hosts}'.split(',')
@@ -43,47 +44,32 @@ ip_address_list = zookeeper_hosts.split(',')
 shard = open('/var/shard.txt').readlines()[0].strip()
 node = '#{datacenter}-redis-#{location}-#{node.chef_environment}-%s' % (shard)
 path = '/%s/' % (node)
-#Each redis server will access eachother
+#Each redis server will access each other in the same shard
 if zk.exists(path):
     addresses = zk.children(path)
     redis_servers = list(set(addresses))
     print redis_servers
     for ip_address in redis_servers:
-        keypair_path = '/root/.ssh/#{keypair}'
-        key = paramiko.RSAKey.from_private_key_file(keypair_path)
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(ip_address, 22, username=username, pkey=key)
-        cmd = "sudo ufw allow from #{node[:ipaddress]} to any port 6379"
-        stdin, stdout, stderr = ssh.exec_command(cmd)
-        cmd = "sudo ufw allow from #{node[:ipaddress]} to any port 16379"
-        stdin, stdout, stderr = ssh.exec_command(cmd)
-        out = stdout.read()
-        err = stderr.read()
-        print "out--", out
-        ssh.close()
-        os.system("sudo ufw allow from %s to any port 6379" % ip_address)
-        os.system("sudo ufw allow from %s to any port 16379" % ip_address)
+        if ip_address != '#{node[:ipaddress]}':
+          keypair_path = '/root/.ssh/#{keypair}'
+          key = paramiko.RSAKey.from_private_key_file(keypair_path)
+          ssh = paramiko.SSHClient()
+          ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+          ssh.connect(ip_address, 22, username=username, pkey=key)
+          cmd = "sudo ufw allow from #{node[:ipaddress]}"
+          stdin, stdout, stderr = ssh.exec_command(cmd)
+          ssh.close()
+          os.system("sudo ufw allow from %s" % ip_address)
+          
  
-#Add this node to each sentinal server       
+#Eash sentinal server can access this node     
 node = '#{datacenter}-sentinal-#{location}-#{node.chef_environment}'
 path = '/%s/' % (node)
 if zk.exists(path):
     addresses = zk.children(path)
-    redis_servers = list(set(addresses))
-    print redis_servers
-    for ip_address in redis_servers:
-        keypair_path = '/root/.ssh/#{keypair}'
-        key = paramiko.RSAKey.from_private_key_file(keypair_path)
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(ip_address, 22, username=username, pkey=key)
-        cmd = "sudo ufw allow from #{node[:ipaddress]} to any port 6379"
-        stdin, stdout, stderr = ssh.exec_command(cmd)
-        out = stdout.read()
-        err = stderr.read()
-        print "out--", out
-        ssh.close()
+    sentinal_servers = list(set(addresses))
+    for ip_address in sentinal_servers:
+        os.system("sudo ufw allow from %s" % ip_address)
 PYCODE
   end
 end
@@ -112,23 +98,21 @@ zookeeper_hosts = '#{zk_hosts}'
 ip_address_list = zookeeper_hosts.split(',')
 node = '#{datacenter}-sentinal-#{location}-#{node.chef_environment}'
 path = '/%s/' % (node)
+this_ip = '#{node[:ipaddress]}'
 if zk.exists(path):
     addresses = zk.children(path)
-    redis_servers = list(set(addresses))
-    print redis_servers
-    for ip_address in redis_servers:
-        keypair_path = '/root/.ssh/#{keypair}'
-        key = paramiko.RSAKey.from_private_key_file(keypair_path)
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(ip_address, 22, username=username, pkey=key)
-        cmd = "sudo ufw allow from #{node[:ipaddress]} to any port 26379"
-        stdin, stdout, stderr = ssh.exec_command(cmd)
-        out = stdout.read()
-        err = stderr.read()
-        print "out--", out
-        ssh.close()
-        os.system("sudo ufw allow from %s to any port 26379" % ip_address)
+    sentinal_servers = list(set(addresses))
+    for ip_address in sentinal_servers:
+        if ip_address != this_ip:
+          keypair_path = '/root/.ssh/#{keypair}'
+          key = paramiko.RSAKey.from_private_key_file(keypair_path)
+          ssh = paramiko.SSHClient()
+          ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+          ssh.connect(ip_address, 22, username=username, pkey=key)
+          cmd = "sudo ufw allow from #{node[:ipaddress]}"
+          stdin, stdout, stderr = ssh.exec_command(cmd)
+          ssh.close()
+          os.system("sudo ufw allow from %s" % ip_address)
 
 this_tree = str(zk.export_tree()).strip()
 tree = this_tree.splitlines()
@@ -141,18 +125,14 @@ for node in shard_list:
   if zk.exists(path):
       addresses = zk.children(path)
       redis_servers = list(set(addresses))
-      print redis_servers
       for ip_address in redis_servers:
           keypair_path = '/root/.ssh/#{keypair}'
           key = paramiko.RSAKey.from_private_key_file(keypair_path)
           ssh = paramiko.SSHClient()
           ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
           ssh.connect(ip_address, 22, username=username, pkey=key)
-          cmd = "sudo ufw allow from #{node[:ipaddress]} to any port 6379"
+          cmd = "sudo ufw allow from #{node[:ipaddress]}"
           stdin, stdout, stderr = ssh.exec_command(cmd)
-          out = stdout.read()
-          err = stderr.read()
-          print "out--", out
           ssh.close()
 PYCODE
   end

@@ -23,6 +23,7 @@ easy_install_package "redis" do
   action :upgrade
 end
 
+
 if datacenter!='local' and server_type=='redis'
   script "add_slave" do
     interpreter "python"
@@ -42,31 +43,31 @@ for i in xrange(len(zk_host_list)):
 zk_host_str = ','.join(zk_host_list)
 zk = zc.zk.ZooKeeper(zk_host_str) 
 shard = open('/var/shard.txt').readlines()[0].strip()
-node = '#{datacenter}-sentinal-#{location}-#{node.chef_environment}'
+node = '#{datacenter}-redis-#{location}-#{node.chef_environment}-%s' % (shard)
 path = '/%s/' % (node)
-sentinal_hosts_list = []
+master_ipaddress = None
+this_ip = '#{node[:ipaddress]}'
 if zk.exists(path):
     addresses = zk.children(path)
-    sentinal_hosts = list(addresses)
-    for ip in sentinal_hosts:
-        sentinal_hosts_list.append((ip, 26379)) 
-if sentinal_hosts_list: 
-  sentinel = Sentinel(sentinal_hosts_list, socket_timeout=1)
-  master = sentinel.discover_master(shard)
-  if master:
-      master_ipaddress = master[0]
-      print master_ipaddress
-      rc = redis.StrictRedis(host='#{node[:ipaddress]}',port=6379)
-      rc.slaveof(host=master_ipaddress, port=6379)
-      print 'Syncing....'
-      syncing = True
-      while syncing == True:
-          info = rc.info()
-          print 'master_sync_in_progress:',info['master_sync_in_progress'], 'master_link_status:',info['master_link_status']
-          if info['master_link_status']=='up':
-              syncing = False
-          time.sleep(3)
-      print 'slave is connected'
+    redis_hosts = list(addresses)
+    for ip in redis_hosts:
+        if ip != this_ip:
+          r = redis.StrictRedis(host=ip,port=6379)
+          info = r.info()
+          if info['role']=='master':
+              master_ipaddress = ip
+              break
+if master_ipaddress and len(redis_hosts)>1:
+    r = redis.StrictRedis(host=this_ip,port=6379)
+    r.slaveof(host=master_ipaddress, port=6379)
+    print 'Syncing....'
+    syncing = True
+    while syncing == True:
+        info = r.info()
+        if info['master_link_status']=='up':
+            syncing = False
+        time.sleep(3)
+    print 'slave is connected'
 os.system('touch #{Chef::Config[:file_cache_path]}/add_slave.lock')
 PYCODE
 not_if {File.exists?("#{Chef::Config[:file_cache_path]}/add_slave.lock")}
