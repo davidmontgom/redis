@@ -2,5 +2,5 @@ check process sentinal
   #monit procmatch ".*/var/redis-3.0.0/src/redis-sentinel"
   with matching ".*/var/redis-3.0.0/src/redis-sentinel*"
   start program = "/etc/init.d/sentinal_server: start"
-  stop program = "/etc/init.d/sentinal_server: stop"
+  stop program = "/etc/init.d/sentinal_server: stop" 
   
