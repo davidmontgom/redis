@@ -23,7 +23,7 @@ environment = meta_parms['environment']
 location = meta_parms['location']
 datacenter = meta_parms['datacenter']
 
-if datacenter=='local':
+if datacenter!='local':
     zk_host_list = open('/var/zookeeper_hosts.json').readlines()[0]
     zk_host_list = zk_host_list.split(',')
 else:
