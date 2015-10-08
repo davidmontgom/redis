@@ -14,20 +14,20 @@ import logging #https://kazoo.readthedocs.org/en/latest/basic_usage.html
 logging.basicConfig()
 running_in_pydev = 'PYDEV_CONSOLE_ENCODING' in os.environ
 SETTINGS_FILE='/etc/ec2/meta_data.yaml'
-from yaml import load, dump
-from yaml import Loader, Dumper
-f = open(SETTINGS_FILE)
-meta_parms = load(f, Loader=Loader)
-f.close()
-environment = meta_parms['environment']
-location = meta_parms['location']
-datacenter = meta_parms['datacenter']
+# from yaml import load, dump
+# from yaml import Loader, Dumper
+# f = open(SETTINGS_FILE)
+# meta_parms = load(f, Loader=Loader)
+# f.close()
+# environment = meta_parms['environment']
+# location = meta_parms['location']
+# datacenter = meta_parms['datacenter']
 
-if datacenter!='local':
-    zk_host_list = open('/var/zookeeper_hosts.json').readlines()[0]
-    zk_host_list = zk_host_list.split(',')
-else:
-    zk_host_list =['1.zk.do.development.ny.forexhui.com']
+#if datacenter!='local':
+zk_host_list = open('/var/zookeeper_hosts.json').readlines()[0]
+zk_host_list = zk_host_list.split(',')
+# else:
+#     zk_host_list =['1.zk.do.development.ny.forexhui.com']
 
 #zk_host_list = '1.zk.do.development.ny.forexhui.com'
 for i in xrange(len(zk_host_list)):
