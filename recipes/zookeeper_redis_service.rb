@@ -55,7 +55,6 @@ for i in xrange(int(#{required_count})):
 zk_host_str = ','.join(zookeeper_hosts)   
 zk = zc.zk.ZooKeeper(zk_host_str) 
 shard = open('/var/shard.txt').readlines()[0].strip()
-do-ny-development-forex-zookeeper
 node = '#{datacenter}-#{location}-#{node.chef_environment}-#{slug}-redis-%s' % (shard)
 path = '/%s/' % (node)
 #Each redis server will access each other in the same shard
