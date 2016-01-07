@@ -1,14 +1,28 @@
 datacenter = node.name.split('-')[0]
-server_type = node.name.split('-')[1]
-location = node.name.split('-')[2]
-  
-data_bag("my_data_bag")
-zk = data_bag_item("my_data_bag", "zk")
-zk_hosts = zk[node.chef_environment][datacenter][location]["zookeeper_hosts"]
+location = node.name.split('-')[1]
+environment = node.name.split('-')[2]
+slug = node.name.split('-')[3] 
+server_type = node.name.split('-')[4]
+shard = node.name.split('-')[5]
 
-db = data_bag_item("my_data_bag", "my")
-keypair=db[node.chef_environment][location]["ssh"]["keypair"]
-username=db[node.chef_environment][location]["ssh"]["username"]
+data_bag("meta_data_bag")
+aws = data_bag_item("meta_data_bag", "aws")
+domain = aws[node.chef_environment]["route53"]["domain"]
+zone_id = aws[node.chef_environment]["route53"]["zone_id"]
+AWS_ACCESS_KEY_ID = aws[node.chef_environment]['AWS_ACCESS_KEY_ID']
+AWS_SECRET_ACCESS_KEY = aws[node.chef_environment]['AWS_SECRET_ACCESS_KEY']
+
+data_bag("server_data_bag")
+zookeeper_server = data_bag_item("server_data_bag", "zookeeper")
+subdomain = zookeeper_server[datacenter][environment][location]['subdomain']
+required_count = zookeeper_server[datacenter][environment][location]['required_count']
+full_domain = "#{subdomain}.#{domain}"
+
+if datacenter!='aws'
+  dc_cloud = data_bag_item("meta_data_bag", "#{datacenter}")
+  keypair = dc_cloud[node.chef_environment]["keypair"]
+  username = dc_cloud["username"]
+end
 
 
 easy_install_package "zc.zk" do
@@ -37,13 +51,13 @@ import paramiko
 from redis.sentinel import Sentinel
 import redis
 import time
-zk_host_list = '#{zk_hosts}'.split(',')
-for i in xrange(len(zk_host_list)):
-    zk_host_list[i]=zk_host_list[i]+':2181' 
-zk_host_str = ','.join(zk_host_list)
+zookeeper_hosts = []
+for i in xrange(int(#{required_count})):
+    zookeeper_hosts.append("%s.#{full_domain}:2181" % (i+1))
+zk_host_str = ','.join(zookeeper_hosts)   
 zk = zc.zk.ZooKeeper(zk_host_str) 
 shard = open('/var/shard.txt').readlines()[0].strip()
-node = '#{datacenter}-redis-#{location}-#{node.chef_environment}-%s' % (shard)
+node = '#{datacenter}-#{location}-#{node.chef_environment}-#{slug}-redis-%s' % (shard)
 path = '/%s/' % (node)
 master_ipaddress = None
 this_ip = '#{node[:ipaddress]}'

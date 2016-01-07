@@ -1,14 +1,29 @@
 datacenter = node.name.split('-')[0]
-server_type = node.name.split('-')[1]
-location = node.name.split('-')[2]
-  
-data_bag("my_data_bag")
-zk = data_bag_item("my_data_bag", "zk")
-zk_hosts = zk[node.chef_environment][datacenter][location]["zookeeper_hosts"]
+location = node.name.split('-')[1]
+environment = node.name.split('-')[2]
+slug = node.name.split('-')[3] 
+server_type = node.name.split('-')[4]
+shard = node.name.split('-')[5]
 
-db = data_bag_item("my_data_bag", "my")
-keypair=db[node.chef_environment][location]["ssh"]["keypair"]
-username=db[node.chef_environment][location]["ssh"]["username"]
+
+data_bag("meta_data_bag")
+aws = data_bag_item("meta_data_bag", "aws")
+domain = aws[node.chef_environment]["route53"]["domain"]
+zone_id = aws[node.chef_environment]["route53"]["zone_id"]
+AWS_ACCESS_KEY_ID = aws[node.chef_environment]['AWS_ACCESS_KEY_ID']
+AWS_SECRET_ACCESS_KEY = aws[node.chef_environment]['AWS_SECRET_ACCESS_KEY']
+
+data_bag("server_data_bag")
+zookeeper_server = data_bag_item("server_data_bag", "zookeeper")
+subdomain = zookeeper_server[datacenter][environment][location]['subdomain']
+required_count = zookeeper_server[datacenter][environment][location]['required_count']
+full_domain = "#{subdomain}.#{domain}"
+
+if datacenter!='aws'
+  dc_cloud = data_bag_item("meta_data_bag", "#{datacenter}")
+  keypair = dc_cloud[node.chef_environment]["keypair"]
+  username = dc_cloud["username"]
+end
 
 easy_install_package "zc.zk" do
   action :install
@@ -34,15 +49,14 @@ logging.basicConfig()
 import paramiko
 import time
 username='#{username}'
-zookeeper_hosts = '#{zk_hosts}'
-zk_host_list = '#{zk_hosts}'.split(',')
-for i in xrange(len(zk_host_list)):
-    zk_host_list[i]=zk_host_list[i]+':2181' 
-zk_host_str = ','.join(zk_host_list)
+zookeeper_hosts = []
+for i in xrange(int(#{required_count})):
+    zookeeper_hosts.append("%s.#{full_domain}:2181" % (i+1))
+zk_host_str = ','.join(zookeeper_hosts)   
 zk = zc.zk.ZooKeeper(zk_host_str) 
-ip_address_list = zookeeper_hosts.split(',')
 shard = open('/var/shard.txt').readlines()[0].strip()
-node = '#{datacenter}-redis-#{location}-#{node.chef_environment}-%s' % (shard)
+do-ny-development-forex-zookeeper
+node = '#{datacenter}-#{location}-#{node.chef_environment}-#{slug}-redis-%s' % (shard)
 path = '/%s/' % (node)
 #Each redis server will access each other in the same shard
 if zk.exists(path):
@@ -63,12 +77,12 @@ if zk.exists(path):
           
  
 #Eash sentinal server can access this node     
-node = '#{datacenter}-sentinal-#{location}-#{node.chef_environment}'
+node = '#{datacenter}-#{location}-#{node.chef_environment}-#{slug}-sentinel' 
 path = '/%s/' % (node)
 if zk.exists(path):
     addresses = zk.children(path)
-    sentinal_servers = list(set(addresses))
-    for ip_address in sentinal_servers:
+    sentinel_servers = list(set(addresses))
+    for ip_address in ssentinel_servers:
         os.system("sudo ufw allow from %s" % ip_address)
 PYCODE
   end
@@ -76,8 +90,8 @@ end
 
 
 
-if datacenter!='local' and server_type=='sentinal'
-  script "zookeeper_add_sentinal" do
+if datacenter!='local' and server_type=='sentinel'
+  script "zookeeper_add_sentinel" do
     interpreter "python"
     user "root"
   code <<-PYCODE
@@ -86,17 +100,15 @@ import zc.zk
 import logging 
 logging.basicConfig()
 
-zk_host_list = '#{zk_hosts}'.split(',')
-for i in xrange(len(zk_host_list)):
-    zk_host_list[i]=zk_host_list[i]+':2181' 
-zk_host_str = ','.join(zk_host_list)
+zookeeper_hosts = []
+for i in xrange(int(#{required_count})):
+    zookeeper_hosts.append("%s.#{full_domain}:2181" % (i+1))
+zk_host_str = ','.join(zookeeper_hosts)  
 zk = zc.zk.ZooKeeper(zk_host_str)
 
 import paramiko
 username='#{username}'
-zookeeper_hosts = '#{zk_hosts}'
-ip_address_list = zookeeper_hosts.split(',')
-node = '#{datacenter}-sentinal-#{location}-#{node.chef_environment}'
+node = '#{datacenter}-#{location}-#{node.chef_environment}-#{slug}-sentinel'
 path = '/%s/' % (node)
 this_ip = '#{node[:ipaddress]}'
 if zk.exists(path):
@@ -118,7 +130,7 @@ this_tree = str(zk.export_tree()).strip()
 tree = this_tree.splitlines()
 shard_list = []
 for t in tree:
-    if t.find('shard')>=0 and t.find('redis')>=0:
+    if t.find("#{datacenter}-#{location}-#{node.chef_environment}-#{slug}")>=0:
         shard_list.append(str(t))
 for node in shard_list:
   path = '/%s/' % (node)
