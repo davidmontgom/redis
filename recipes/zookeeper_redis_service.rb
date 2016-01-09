@@ -96,7 +96,7 @@ path = '/%s/' % (node)
 if zk.exists(path):
     addresses = zk.children(path)
     sentinel_servers = list(set(addresses))
-    for ip_address in ssentinel_servers:
+    for ip_address in sentinel_servers:
         os.system("sudo ufw allow from %s" % ip_address)
 PYCODE
   end
