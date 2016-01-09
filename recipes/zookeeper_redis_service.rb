@@ -5,9 +5,10 @@ server_type = node.name.split('-')[3]
 slug = node.name.split('-')[4] 
 cluster_slug = File.read("/var/cluster_slug.txt")
 cluster_slug = cluster_slug.gsub(/\n/, "") 
-shard = File.read("/var/shard.txt")
-shard = shard.gsub(/\n/, "") 
-
+if server_type=="redis"
+  shard = File.read("/var/shard.txt")
+  shard = shard.gsub(/\n/, "") 
+end
 
 data_bag("meta_data_bag")
 aws = data_bag_item("meta_data_bag", "aws")
@@ -146,9 +147,9 @@ this_tree = str(zk.export_tree()).strip()
 tree = this_tree.splitlines()
 shard_list = []
 if "#{cluster_slug}"=="nocluster":
-    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{shard}'
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}'
 else:
-    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{cluster_slug}-#{shard}'
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{cluster_slug}'
 for t in tree:
     if t.find(node)>=0:
         shard_list.append(str(t))
