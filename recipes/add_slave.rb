@@ -3,6 +3,8 @@ environment = node.name.split('-')[1]
 location = node.name.split('-')[2]
 server_type = node.name.split('-')[3]
 slug = node.name.split('-')[4] 
+shard = File.read("/var/shard.txt")
+shard = shard.gsub(/\n/, "") 
 cluster_slug = File.read("/var/cluster_slug.txt")
 cluster_slug = cluster_slug.gsub(/\n/, "") 
 
