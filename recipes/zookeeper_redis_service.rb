@@ -89,7 +89,7 @@ if zk.exists(path):
 #Eash sentinal server can access this node     
 if "#{cluster_slug}"=="nocluster":
     node = '#{datacenter}-#{node.chef_environment}-#{location}-sentinel-#{slug}'
-  else:
+else:
     node = '#{datacenter}-#{node.chef_environment}-#{location}-sentinel-#{slug}-#{cluster_slug}'
 path = '/%s/' % (node)
 if zk.exists(path):
