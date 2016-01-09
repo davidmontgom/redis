@@ -13,14 +13,9 @@ easy_install_package "pytz" do
   action :install
 end
 easy_install_package "redis" do
-  action :install
+  action :upgrade
 end
-easy_install_package "stopwatch" do
-  action :install
-end
-easy_install_package "timeout" do
-  action :install
-end
+
 easy_install_package "apache-libcloud" do
   action :install
 end
