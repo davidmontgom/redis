@@ -1,9 +1,10 @@
 datacenter = node.name.split('-')[0]
-location = node.name.split('-')[1]
-environment = node.name.split('-')[2]
-slug = node.name.split('-')[3] 
-server_type = node.name.split('-')[4]
-shard = node.name.split('-')[5]
+environment = node.name.split('-')[1]
+location = node.name.split('-')[2]
+server_type = node.name.split('-')[3]
+slug = node.name.split('-')[4] 
+cluster_slug = File.read("/var/cluster_slug.txt")
+cluster_slug = cluster_slug.gsub(/\n/, "") 
 
 data_bag("meta_data_bag")
 aws = data_bag_item("meta_data_bag", "aws")
@@ -14,8 +15,12 @@ AWS_SECRET_ACCESS_KEY = aws[node.chef_environment]['AWS_SECRET_ACCESS_KEY']
 
 data_bag("server_data_bag")
 zookeeper_server = data_bag_item("server_data_bag", "zookeeper")
-subdomain = zookeeper_server[datacenter][environment][location]['subdomain']
-required_count = zookeeper_server[datacenter][environment][location]['required_count']
+required_count = zookeeper_server[datacenter][environment][location][cluster_slug]['required_count']
+if cluster_slug=="nocluster"
+  subdomain = "#{server_type}-#{datacenter}-#{environment}-#{location}-#{slug}"
+else
+  subdomain = "#{cluster_slug}-#{server_type}-#{datacenter}-#{environment}-#{location}-#{slug}"
+end
 full_domain = "#{subdomain}.#{domain}"
 
 if datacenter!='aws'
@@ -38,6 +43,7 @@ easy_install_package "redis" do
 end
 
 
+aws-development-east-zookeeper-c1-i1
 if datacenter!='local' and server_type=='redis'
   script "add_slave" do
     interpreter "python"
@@ -53,11 +59,14 @@ import redis
 import time
 zookeeper_hosts = []
 for i in xrange(int(#{required_count})):
-    zookeeper_hosts.append("%s.#{full_domain}:2181" % (i+1))
+    zookeeper_hosts.append("%s-#{full_domain}:2181" % (i+1))
 zk_host_str = ','.join(zookeeper_hosts)   
 zk = zc.zk.ZooKeeper(zk_host_str) 
 shard = open('/var/shard.txt').readlines()[0].strip()
-node = '#{datacenter}-#{location}-#{node.chef_environment}-#{slug}-redis-%s' % (shard)
+if "#{cluster_slug}"=="nocluster":
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{shard}'
+  else:
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{cluster_slug}-#{shard}'
 path = '/%s/' % (node)
 master_ipaddress = None
 this_ip = '#{node[:ipaddress]}'

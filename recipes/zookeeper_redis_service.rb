@@ -1,9 +1,12 @@
 datacenter = node.name.split('-')[0]
-location = node.name.split('-')[1]
-environment = node.name.split('-')[2]
-slug = node.name.split('-')[3] 
-server_type = node.name.split('-')[4]
-shard = node.name.split('-')[5]
+environment = node.name.split('-')[1]
+location = node.name.split('-')[2]
+server_type = node.name.split('-')[3]
+slug = node.name.split('-')[4] 
+cluster_slug = File.read("/var/cluster_slug.txt")
+cluster_slug = cluster_slug.gsub(/\n/, "") 
+shard = File.read("/var/shard.txt")
+shard = shard.gsub(/\n/, "") 
 
 
 data_bag("meta_data_bag")
@@ -13,10 +16,15 @@ zone_id = aws[node.chef_environment]["route53"]["zone_id"]
 AWS_ACCESS_KEY_ID = aws[node.chef_environment]['AWS_ACCESS_KEY_ID']
 AWS_SECRET_ACCESS_KEY = aws[node.chef_environment]['AWS_SECRET_ACCESS_KEY']
 
+
 data_bag("server_data_bag")
 zookeeper_server = data_bag_item("server_data_bag", "zookeeper")
-subdomain = zookeeper_server[datacenter][environment][location]['subdomain']
-required_count = zookeeper_server[datacenter][environment][location]['required_count']
+required_count = zookeeper_server[datacenter][environment][location][cluster_slug]['required_count']
+if cluster_slug=="nocluster"
+  subdomain = "#{server_type}-#{datacenter}-#{environment}-#{location}-#{slug}"
+else
+  subdomain = "#{cluster_slug}-#{server_type}-#{datacenter}-#{environment}-#{location}-#{slug}"
+end
 full_domain = "#{subdomain}.#{domain}"
 
 if datacenter!='aws'
@@ -51,11 +59,14 @@ import time
 username='#{username}'
 zookeeper_hosts = []
 for i in xrange(int(#{required_count})):
-    zookeeper_hosts.append("%s.#{full_domain}:2181" % (i+1))
+    zookeeper_hosts.append("%s-#{full_domain}:2181" % (i+1))
 zk_host_str = ','.join(zookeeper_hosts)   
 zk = zc.zk.ZooKeeper(zk_host_str) 
 shard = open('/var/shard.txt').readlines()[0].strip()
-node = '#{datacenter}-#{location}-#{node.chef_environment}-#{slug}-redis-%s' % (shard)
+if "#{cluster_slug}"=="nocluster":
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{shard}'
+  else:
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{cluster_slug}-#{shard}'
 path = '/%s/' % (node)
 #Each redis server will access each other in the same shard
 if zk.exists(path):
@@ -76,7 +87,10 @@ if zk.exists(path):
           
  
 #Eash sentinal server can access this node     
-node = '#{datacenter}-#{location}-#{node.chef_environment}-#{slug}-sentinel' 
+if "#{cluster_slug}"=="nocluster":
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-sentinel-#{slug}'
+  else:
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-sentinel-#{slug}-#{cluster_slug}'
 path = '/%s/' % (node)
 if zk.exists(path):
     addresses = zk.children(path)
@@ -101,13 +115,16 @@ logging.basicConfig()
 
 zookeeper_hosts = []
 for i in xrange(int(#{required_count})):
-    zookeeper_hosts.append("%s.#{full_domain}:2181" % (i+1))
+    zookeeper_hosts.append("%s-#{full_domain}:2181" % (i+1))
 zk_host_str = ','.join(zookeeper_hosts)  
 zk = zc.zk.ZooKeeper(zk_host_str)
 
 import paramiko
 username='#{username}'
-node = '#{datacenter}-#{location}-#{node.chef_environment}-#{slug}-sentinel'
+if "#{cluster_slug}"=="nocluster":
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-sentinel-#{slug}'
+  else:
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-sentinel-#{slug}-#{cluster_slug}'
 path = '/%s/' % (node)
 this_ip = '#{node[:ipaddress]}'
 if zk.exists(path):
@@ -128,8 +145,12 @@ if zk.exists(path):
 this_tree = str(zk.export_tree()).strip()
 tree = this_tree.splitlines()
 shard_list = []
+if "#{cluster_slug}"=="nocluster":
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{shard}'
+  else:
+    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{cluster_slug}-#{shard}'
 for t in tree:
-    if t.find("#{datacenter}-#{location}-#{node.chef_environment}-#{slug}")>=0:
+    if t.find(node)>=0:
         shard_list.append(str(t))
 for node in shard_list:
   path = '/%s/' % (node)
