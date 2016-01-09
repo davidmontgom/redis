@@ -25,7 +25,8 @@ datacenter = meta_parms['datacenter']
 slug = meta_parms['slug']
 cluster_slug = open('/var/cluster_slug.txt').readlines()[0].strip()
 
-if cluster_slug!='nocluster':
+
+if cluster_slug=='nocluster':
     findme = "%s-%s-%s-%s-%s" % (datacenter,environment,location,'redis',slug)
 else:
     findme = "%s-%s-%s-%s-%s-%s" % (datacenter,environment,location,'redis',cluster_slug,slug)
