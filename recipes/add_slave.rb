@@ -43,7 +43,7 @@ easy_install_package "redis" do
 end
 
 
-aws-development-east-zookeeper-c1-i1
+
 if datacenter!='local' and server_type=='redis'
   script "add_slave" do
     interpreter "python"
