@@ -67,7 +67,7 @@ zk = zc.zk.ZooKeeper(zk_host_str)
 shard = open('/var/shard.txt').readlines()[0].strip()
 if "#{cluster_slug}"=="nocluster":
     node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{shard}'
-  else:
+else:
     node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{cluster_slug}-#{shard}'
 path = '/%s/' % (node)
 master_ipaddress = None

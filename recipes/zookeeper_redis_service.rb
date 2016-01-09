@@ -65,7 +65,7 @@ zk = zc.zk.ZooKeeper(zk_host_str)
 shard = open('/var/shard.txt').readlines()[0].strip()
 if "#{cluster_slug}"=="nocluster":
     node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{shard}'
-  else:
+else:
     node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{cluster_slug}-#{shard}'
 path = '/%s/' % (node)
 #Each redis server will access each other in the same shard
@@ -123,7 +123,7 @@ import paramiko
 username='#{username}'
 if "#{cluster_slug}"=="nocluster":
     node = '#{datacenter}-#{node.chef_environment}-#{location}-sentinel-#{slug}'
-  else:
+else:
     node = '#{datacenter}-#{node.chef_environment}-#{location}-sentinel-#{slug}-#{cluster_slug}'
 path = '/%s/' % (node)
 this_ip = '#{node[:ipaddress]}'
@@ -147,7 +147,7 @@ tree = this_tree.splitlines()
 shard_list = []
 if "#{cluster_slug}"=="nocluster":
     node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{shard}'
-  else:
+else:
     node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{cluster_slug}-#{shard}'
 for t in tree:
     if t.find(node)>=0:
