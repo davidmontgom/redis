@@ -13,15 +13,23 @@ import redis
 import logging #https://kazoo.readthedocs.org/en/latest/basic_usage.html
 logging.basicConfig()
 running_in_pydev = 'PYDEV_CONSOLE_ENCODING' in os.environ
-SETTINGS_FILE='/etc/ec2/meta_data.yaml'
-# from yaml import load, dump
-# from yaml import Loader, Dumper
-# f = open(SETTINGS_FILE)
-# meta_parms = load(f, Loader=Loader)
-# f.close()
-# environment = meta_parms['environment']
-# location = meta_parms['location']
-# datacenter = meta_parms['datacenter']
+SETTINGS_FILE='/root/.bootops.yaml'
+from yaml import load, dump
+from yaml import Loader, Dumper
+f = open(SETTINGS_FILE)
+meta_parms = load(f, Loader=Loader)
+f.close()
+environment = meta_parms['environment']
+location = meta_parms['location']
+datacenter = meta_parms['datacenter']
+slug = meta_parms['slug']
+cluster_slug = open('/var/cluster_slug.txt').readlines()[0].strip()
+
+if cluster_slug!='nocluster':
+    findme = "%s-%s-%s-%s-%s" % (datacenter,environment,location,'redis',slug)
+else:
+    findme = "%s-%s-%s-%s-%s-%s" % (datacenter,environment,location,'redis',cluster_slug,slug)
+    
 
 #if datacenter!='local':
 zk_host_list = open('/var/zookeeper_hosts.json').readlines()[0]
@@ -35,6 +43,7 @@ for i in xrange(len(zk_host_list)):
 zk_host_str = ','.join(zk_host_list)
 zk = zc.zk.ZooKeeper(zk_host_str)
 
+#do-development-ny-redis-forex-shard1
 
 def get_shard_ip_hash():
     this_tree = zk.export_tree()
@@ -44,7 +53,7 @@ def get_shard_ip_hash():
     
     shard_list = []
     for t in tree:
-        if t.find('shard')>=0 and t.find('redis')>=0:
+        if t.find(findme)>=0 and t.find('shard')>=0:
             shard_list.append(str(t))     
     shard_ip_hash = {}
     for shard in shard_list:
