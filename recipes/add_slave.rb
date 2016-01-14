@@ -27,7 +27,7 @@ end
 if cluster_slug_zookeeper=="nocluster"
   subdomain = "zookeeper-#{slug}-#{datacenter}-#{environment}-#{location}"
 else
-  subdomain = "#{cluster_slug_zookeeper}-zookeeper-#{slug}-#{datacenter}-#{environment}-#{location}"
+  subdomain = "zookeeper-#{slug}-#{datacenter}-#{environment}-#{location}-#{cluster_slug_zookeeper}"
 end
 
 required_count = zookeeper_server[datacenter][environment][location][cluster_slug_zookeeper]['required_count']
@@ -76,7 +76,7 @@ shard = open('/var/shard.txt').readlines()[0].strip()
 if "#{cluster_slug}"=="nocluster":
     node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{shard}'
 else:
-    node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{cluster_slug}-#{shard}'
+    node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{shard}-#{cluster_slug}'
 path = '/%s/' % (node)
 master_ipaddress = None
 this_ip = '#{node[:ipaddress]}'
