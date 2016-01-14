@@ -128,6 +128,8 @@ while True:
     f.write(sentinal_conf)
     f.close()
     #os.system('/usr/local/bin/supervisorctl restart all')
+    sys.stdout.flush()
+    sys.stderr.flush()
     print 'waiting'
     time.sleep(20)
    
