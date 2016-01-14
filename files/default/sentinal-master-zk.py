@@ -27,9 +27,9 @@ cluster_slug = open('/var/cluster_slug.txt').readlines()[0].strip()
 
 
 if cluster_slug=='nocluster':
-    findme = "%s-%s-%s-%s-%s" % (datacenter,environment,location,'redis',slug)
+    findme = "%s-%s-%s-%s-%s" % ('redis',slug,datacenter,environment,location)
 else:
-    findme = "%s-%s-%s-%s-%s-%s" % (datacenter,environment,location,'redis',cluster_slug,slug)
+    findme = "%s-%s-%s-%s-%s-%s" % ('redis',slug,datacenter,environment,location,cluster_slug)
     
 
 #if datacenter!='local':
