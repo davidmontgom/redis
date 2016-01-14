@@ -1,8 +1,8 @@
-datacenter = node.name.split('-')[0]
-environment = node.name.split('-')[1]
-location = node.name.split('-')[2]
-server_type = node.name.split('-')[3]
-slug = node.name.split('-')[4] 
+server_type = node.name.split('-')[0]
+slug = node.name.split('-')[1] 
+datacenter = node.name.split('-')[2]
+environment = node.name.split('-')[3]
+location = node.name.split('-')[4]
 cluster_slug = File.read("/var/cluster_slug.txt")
 cluster_slug = cluster_slug.gsub(/\n/, "") 
 if server_type=="redis"
@@ -20,12 +20,20 @@ AWS_SECRET_ACCESS_KEY = aws[node.chef_environment]['AWS_SECRET_ACCESS_KEY']
 
 data_bag("server_data_bag")
 zookeeper_server = data_bag_item("server_data_bag", "zookeeper")
-required_count = zookeeper_server[datacenter][environment][location][cluster_slug]['required_count']
-if cluster_slug=="nocluster"
-  subdomain = "zookeeper-#{datacenter}-#{environment}-#{location}-#{slug}"
+
+if zookeeper_server[datacenter][environment][location].has_key?(cluster_slug)
+  cluster_slug_zookeeper = cluster_slug
 else
-  subdomain = "#{cluster_slug}-zookeeper-#{datacenter}-#{environment}-#{location}-#{slug}"
+  cluster_slug_zookeeper = "nocluster"
 end
+
+if cluster_slug_zookeeper=="nocluster"
+  subdomain = "zookeeper-#{slug}-#{datacenter}-#{environment}-#{location}"
+else
+  subdomain = "#{cluster_slug_zookeeper}-zookeeper-#{slug}-#{datacenter}-#{environment}-#{location}"
+end
+
+required_count = zookeeper_server[datacenter][environment][location][cluster_slug_zookeeper]['required_count']
 full_domain = "#{subdomain}.#{domain}"
 
 if datacenter!='aws'
@@ -65,9 +73,9 @@ zk_host_str = ','.join(zookeeper_hosts)
 zk = zc.zk.ZooKeeper(zk_host_str) 
 shard = open('/var/shard.txt').readlines()[0].strip()
 if "#{cluster_slug}"=="nocluster":
-    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{shard}'
+    node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{shard}'
 else:
-    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{cluster_slug}-#{shard}'
+    node = '##{server_type}-#{slug}-{datacenter}-#{node.chef_environment}-#{location}-#{cluster_slug}-#{shard}'
 path = '/%s/' % (node)
 #Each redis server will access each other in the same shard
 if zk.exists(path):
@@ -89,9 +97,9 @@ if zk.exists(path):
  
 #Eash sentinal server can access this node     
 if "#{cluster_slug}"=="nocluster":
-    node = '#{datacenter}-#{node.chef_environment}-#{location}-sentinel-#{slug}'
+    node = 'sentinel-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}'
 else:
-    node = '#{datacenter}-#{node.chef_environment}-#{location}-sentinel-#{slug}-#{cluster_slug}'
+    node = 'sentinel-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{cluster_slug}'
 path = '/%s/' % (node)
 if zk.exists(path):
     addresses = zk.children(path)
@@ -123,9 +131,9 @@ zk = zc.zk.ZooKeeper(zk_host_str)
 import paramiko
 username='#{username}'
 if "#{cluster_slug}"=="nocluster":
-    node = '#{datacenter}-#{node.chef_environment}-#{location}-sentinel-#{slug}'
+    node = 'sentinel-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}'
 else:
-    node = '#{datacenter}-#{node.chef_environment}-#{location}-sentinel-#{slug}-#{cluster_slug}'
+    node = 'sentinel-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{cluster_slug}'
 path = '/%s/' % (node)
 this_ip = '#{node[:ipaddress]}'
 if zk.exists(path):
@@ -147,9 +155,9 @@ this_tree = str(zk.export_tree()).strip()
 tree = this_tree.splitlines()
 shard_list = []
 if "#{cluster_slug}"=="nocluster":
-    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}'
+    node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}'
 else:
-    node = '#{datacenter}-#{node.chef_environment}-#{location}-#{server_type}-#{slug}-#{cluster_slug}'
+    node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{cluster_slug}'
 for t in tree:
     if t.find(node)>=0:
         shard_list.append(str(t))
