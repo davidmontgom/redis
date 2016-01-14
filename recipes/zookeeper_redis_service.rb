@@ -155,9 +155,9 @@ this_tree = str(zk.export_tree()).strip()
 tree = this_tree.splitlines()
 shard_list = []
 if "#{cluster_slug}"=="nocluster":
-    node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}'
+    node = 'redis-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}'
 else:
-    node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{cluster_slug}'
+    node = 'redis-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{cluster_slug}'
 for t in tree:
     if t.find(node)>=0:
         shard_list.append(str(t))
