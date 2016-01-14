@@ -99,7 +99,7 @@ while True:
     
     print 'shard_master_hash:',shard_master_hash
 
-    if running_in_pydev==True:
+    if running_in_pydev==True: 
         sentinal_conf_file = '/tmp/sentinal.conf'
         checksum_path = '/tmp/sentinal.checksum'
     else:
