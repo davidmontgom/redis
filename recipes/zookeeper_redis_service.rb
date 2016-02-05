@@ -66,6 +66,7 @@ logging.basicConfig()
 import paramiko
 import time
 import subprocess
+import dns.resolver
 zookeeper_hosts = []
 zookeeper_ip_address_list = []
 for i in xrange(int(#{required_count})):
@@ -171,6 +172,7 @@ logging.basicConfig()
 import paramiko
 import time
 import subprocess
+import dns.resolver
 zookeeper_hosts = []
 zookeeper_ip_address_list = []
 for i in xrange(int(#{required_count})):
