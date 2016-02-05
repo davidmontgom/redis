@@ -65,19 +65,21 @@ import logging
 logging.basicConfig()
 import paramiko
 import time
-username='#{username}'
-import dns.resolver
+import subprocess
 zookeeper_hosts = []
+zookeeper_ip_address_list = []
 for i in xrange(int(#{required_count})):
     zookeeper_hosts.append("%s-#{full_domain}" % (i+1))
 zk_host_list = []
+
 for aname in zookeeper_hosts:
   try:
       data =  dns.resolver.query(aname, 'A')
       zk_host_list.append(data[0].to_text()+':2181')
+      zookeeper_ip_address_list.append(data[0].to_text())
   except:
       print 'ERROR, dns.resolver.NXDOMAIN',aname
-zk_host_str = ','.join(zk_host_list)  
+zk_host_str = ','.join(zk_host_list) 
 
 
 
@@ -101,10 +103,31 @@ if zk.exists(path):
           ssh = paramiko.SSHClient()
           ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
           ssh.connect(ip_address, 22, username=username, pkey=key)
-          cmd = "sudo ufw allow from #{node[:ipaddress]}"
+          cmd = "/sbin/iptables -A INPUT -s #{node[:ipaddress]} -j ACCEPT"
           stdin, stdout, stderr = ssh.exec_command(cmd)
+          cmd = "/sbin/iptables -A OUTPUT -d  #{node[:ipaddress]} -j ACCEPT"
+          stdin, stdout, stderr = ssh.exec_command(cmd)
+          cmd = "/etc/init.d/iptables-persistent save" 
+          stdin, stdout, stderr = ssh.exec_command(cmd)
+          out = stdout.read()
+          err = stderr.read()
           ssh.close()
-          os.system("sudo ufw allow from %s" % ip_address)
+    
+    for ip_address in zookeeper_ip_address_list:
+        if ip_address != '#{node[:ipaddress]}':
+          cmd = "iptables -C INPUT -s %s -j ACCEPT" % (ip_address)
+          p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
+          out = p.stdout.readline().strip()
+          if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+              cmd = "/sbin/iptables -A INPUT -s %s -j ACCEPT" % (ip_address)
+              os.system(cmd)
+              
+          cmd = "iptables -C OUTPUT -d %s -j ACCEPT" % (ip_address)
+          p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
+          out = p.stdout.readline().strip()
+          if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+              cmd = "/sbin/iptables -A OUTPUT -d  %s -j ACCEPT" % (ip_address)
+              os.system(cmd)
           
  
 #Eash sentinal server can access this node     
@@ -117,7 +140,19 @@ if zk.exists(path):
     addresses = zk.children(path)
     sentinel_servers = list(set(addresses))
     for ip_address in sentinel_servers:
-        os.system("sudo ufw allow from %s" % ip_address)
+        cmd = "iptables -C INPUT -s %s -j ACCEPT" % (ip_address)
+        p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
+        out = p.stdout.readline().strip()
+        if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+            cmd = "/sbin/iptables -A INPUT -s %s -j ACCEPT" % (ip_address)
+            os.system(cmd)
+            
+        cmd = "iptables -C OUTPUT -d %s -j ACCEPT" % (ip_address)
+        p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
+        out = p.stdout.readline().strip()
+        if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+            cmd = "/sbin/iptables -A OUTPUT -d  %s -j ACCEPT" % (ip_address)
+            os.system(cmd)
 PYCODE
   end
 end
@@ -133,22 +168,25 @@ import os
 import zc.zk
 import logging 
 logging.basicConfig()
-import dns.resolver
+import paramiko
+import time
+import subprocess
 zookeeper_hosts = []
+zookeeper_ip_address_list = []
 for i in xrange(int(#{required_count})):
     zookeeper_hosts.append("%s-#{full_domain}" % (i+1))
 zk_host_list = []
+
 for aname in zookeeper_hosts:
   try:
       data =  dns.resolver.query(aname, 'A')
       zk_host_list.append(data[0].to_text()+':2181')
+      zookeeper_ip_address_list.append(data[0].to_text())
   except:
       print 'ERROR, dns.resolver.NXDOMAIN',aname
-zk_host_str = ','.join(zk_host_list)   
-zk = zc.zk.ZooKeeper(zk_host_str)
+zk_host_str = ','.join(zk_host_list) 
 
-import paramiko
-username='#{username}'
+
 if "#{cluster_slug}"=="nocluster":
     node = 'sentinel-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}'
 else:
@@ -165,11 +203,34 @@ if zk.exists(path):
           ssh = paramiko.SSHClient()
           ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
           ssh.connect(ip_address, 22, username=username, pkey=key)
-          cmd = "sudo ufw allow from #{node[:ipaddress]}"
+          cmd = "/sbin/iptables -A INPUT -s #{node[:ipaddress]} -j ACCEPT"
+          stdin, stdout, stderr = ssh.exec_command(cmd)
+          cmd = "/sbin/iptables -A OUTPUT -d  #{node[:ipaddress]} -j ACCEPT"
+          stdin, stdout, stderr = ssh.exec_command(cmd)
+          cmd = "/etc/init.d/iptables-persistent save" 
           stdin, stdout, stderr = ssh.exec_command(cmd)
           ssh.close()
-          os.system("sudo ufw allow from %s" % ip_address)
-
+          
+          cmd = "iptables -C INPUT -s %s -j ACCEPT" % (ip_address)
+          p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
+          out = p.stdout.readline().strip()
+          if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+              cmd = "/sbin/iptables -A INPUT -s %s -j ACCEPT" % (ip_address)
+              os.system(cmd)
+              
+          cmd = "iptables -C OUTPUT -d %s -j ACCEPT" % (ip_address)
+          p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
+          out = p.stdout.readline().strip()
+          if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+              cmd = "/sbin/iptables -A OUTPUT -d  %s -j ACCEPT" % (ip_address)
+              os.system(cmd)
+          
+          
+          
+          
+          
+          
+          
 this_tree = str(zk.export_tree()).strip()
 tree = this_tree.splitlines()
 shard_list = []
@@ -191,7 +252,11 @@ for node in shard_list:
           ssh = paramiko.SSHClient()
           ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
           ssh.connect(ip_address, 22, username=username, pkey=key)
-          cmd = "sudo ufw allow from #{node[:ipaddress]}"
+          cmd = "/sbin/iptables -A INPUT -s #{node[:ipaddress]} -j ACCEPT"
+          stdin, stdout, stderr = ssh.exec_command(cmd)
+          cmd = "/sbin/iptables -A OUTPUT -d  #{node[:ipaddress]} -j ACCEPT"
+          stdin, stdout, stderr = ssh.exec_command(cmd)
+          cmd = "/etc/init.d/iptables-persistent save" 
           stdin, stdout, stderr = ssh.exec_command(cmd)
           ssh.close()
 PYCODE

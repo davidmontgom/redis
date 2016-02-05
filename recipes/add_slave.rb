@@ -64,18 +64,19 @@ import zc.zk
 import logging 
 logging.basicConfig()
 import paramiko
-from redis.sentinel import Sentinel
-import redis
 import time
-import dns.resolver
+import subprocess
 zookeeper_hosts = []
+zookeeper_ip_address_list = []
 for i in xrange(int(#{required_count})):
     zookeeper_hosts.append("%s-#{full_domain}" % (i+1))
 zk_host_list = []
+
 for aname in zookeeper_hosts:
   try:
       data =  dns.resolver.query(aname, 'A')
       zk_host_list.append(data[0].to_text()+':2181')
+      zookeeper_ip_address_list.append(data[0].to_text())
   except:
       print 'ERROR, dns.resolver.NXDOMAIN',aname
 zk_host_str = ','.join(zk_host_list)    
