@@ -59,6 +59,7 @@ if datacenter!='local' and server_type=='redis'
     interpreter "python"
     user "root"
   code <<-PYCODE
+import redis
 import os
 import zc.zk
 import logging 
