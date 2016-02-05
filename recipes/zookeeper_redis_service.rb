@@ -67,6 +67,7 @@ import paramiko
 import time
 import subprocess
 import dns.resolver
+username='#{username}' 
 zookeeper_hosts = []
 zookeeper_ip_address_list = []
 for i in xrange(int(#{required_count})):
@@ -169,6 +170,7 @@ import paramiko
 import time
 import subprocess
 import dns.resolver
+username='#{username}' 
 zookeeper_hosts = []
 zookeeper_ip_address_list = []
 for i in xrange(int(#{required_count})):
