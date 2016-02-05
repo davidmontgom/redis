@@ -81,10 +81,6 @@ for aname in zookeeper_hosts:
   except:
       print 'ERROR, dns.resolver.NXDOMAIN',aname
 zk_host_str = ','.join(zk_host_list) 
-
-
-
- 
 zk = zc.zk.ZooKeeper(zk_host_str) 
 shard = open('/var/shard.txt').readlines()[0].strip()
 if "#{cluster_slug}"=="nocluster":
@@ -187,7 +183,7 @@ for aname in zookeeper_hosts:
   except:
       print 'ERROR, dns.resolver.NXDOMAIN',aname
 zk_host_str = ','.join(zk_host_list) 
-
+zk = zc.zk.ZooKeeper(zk_host_str)
 
 if "#{cluster_slug}"=="nocluster":
     node = 'sentinel-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}'
