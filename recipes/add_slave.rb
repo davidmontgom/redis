@@ -87,7 +87,7 @@ shard = open('/var/shard.txt').readlines()[0].strip()
 if "#{cluster_slug}"=="nocluster":
     node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{shard}'
 else:
-    node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{shard}-#{cluster_slug}'
+    node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{cluster_slug}-#{shard}'
 path = '/%s/' % (node)
 master_ipaddress = None
 this_ip = '#{node[:ipaddress]}'
@@ -101,7 +101,7 @@ if zk.exists(path):
           if info['role']=='master':
               master_ipaddress = ip
               break
-if master_ipaddress and len(redis_hosts)>1:
+if master_ipaddress and len(redis_hosts)>0:
     r = redis.StrictRedis(host=this_ip,port=6379)
     r.slaveof(host=master_ipaddress, port=6379)
     print 'Syncing....'

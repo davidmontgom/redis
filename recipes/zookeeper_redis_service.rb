@@ -87,7 +87,7 @@ shard = open('/var/shard.txt').readlines()[0].strip()
 if "#{cluster_slug}"=="nocluster":
     node = '#{server_type}-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{shard}'
 else:
-    node = '#{server_type}-#{slug}-{datacenter}-#{node.chef_environment}-#{location}-#{shard}-#{cluster_slug}'
+    node = '#{server_type}-#{slug}-{datacenter}-#{node.chef_environment}-#{location}-#{cluster_slug}-#{shard}'
 path = '/%s/' % (node)
 #Each redis server will access each other in the same shard
 if zk.exists(path):
