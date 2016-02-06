@@ -60,11 +60,13 @@ cookbook_file "/var/redis_cluster.py" do
   mode 00744
 end
 
+cookbook_file "/var/redis_cluster.py" do
+  source "redis_cluster.py"
+  mode 00744
+end
+
 if datacenter!='local' and server_type=='redis'
-
-
-
-bash "kafka_cluster" do
+bash "redis_cluster" do
     user "root"
     code <<-EOH
       /usr/bin/python /var/redis_cluster.py --server_type #{server_type} \
@@ -78,6 +80,27 @@ bash "kafka_cluster" do
                         --slug #{slug} \
                         --cluster_slug #{cluster_slug} \
                         --shard #{shard} \
+                        --keypair #{keypair}
+    EOH
+    action :run
+end
+  
+end
+
+if datacenter!='local' and server_type=='sentinel'
+bash "sentinel_cluster" do
+    user "root"
+    code <<-EOH
+      /usr/bin/python /var/sentinel_cluster.py --server_type #{server_type} \
+                        --username #{username} \
+                        --ip_address #{node[:ipaddress]} \
+                        --zk_count #{required_count} \
+                        --zk_hostname #{full_domain} \
+                        --datacenter #{datacenter} \
+                        --environment #{environment} \
+                        --location #{location} \
+                        --slug #{slug} \
+                        --cluster_slug #{cluster_slug} \
                         --keypair #{keypair}
     EOH
     action :run

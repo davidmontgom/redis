@@ -77,7 +77,7 @@ def iptables_local(this_ip_address,ip_address_list):
             cmd = "/sbin/iptables -A OUTPUT -d  %s -j ACCEPT" % (ip_address)
             os.system(cmd)
     
-def redis_cluster(args):
+def sentinel_cluster(args):
     
     zoo = zookeeper(args)
     zk = zoo.get_conn()
@@ -87,13 +87,13 @@ def redis_cluster(args):
     username = args.username
     keypair = args.keypair
      
-    redis_hosts = [ip_address]
+    sentinel_hosts = [ip_address]
 
     if zk.exists(path):
         addresses = zk.children(path)
         ip_address_list = list(set(addresses))
         redis_hosts = redis_hosts + ip_address_list
-        ip_address_list = list(set(redis_hosts))
+        ip_address_list = list(set(kafka_hosts))
 
         cmd_list = []
         iptables_remote(ip_address,ip_address_list,keypair,username,cmd_list=cmd_list)
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         f.write(line)
     f.close()
 
-    redis_cluster(args)
+    sentinel_cluster(args)
 
 
 
