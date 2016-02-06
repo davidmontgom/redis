@@ -54,7 +54,40 @@ easy_install_package "redis" do
   action :upgrade
 end
 
+
+cookbook_file "/var/redis_cluster.py" do
+  source "redis_cluster.py"
+  mode 00744
+end
+
 if datacenter!='local' and server_type=='redis'
+
+
+
+bash "kafka_cluster" do
+    user "root"
+    code <<-EOH
+      /usr/bin/python /var/redis_cluster.py --server_type #{server_type} \
+                        --username #{username} \
+                        --ip_address #{node[:ipaddress]} \
+                        --zk_count #{required_count} \
+                        --zk_hostname #{full_domain} \
+                        --datacenter #{datacenter} \
+                        --environment #{environment} \
+                        --location #{location} \
+                        --slug #{slug} \
+                        --cluster_slug #{cluster_slug} \
+                        --shard #{shard} \
+                        --keypair #{keypair}
+    EOH
+    action :run
+end
+  
+end
+
+
+
+if datacenter!='local' and server_type=='redisadfasdfadf'
   script "zookeeper_add_redis" do
     interpreter "python"
     user "root"
@@ -102,21 +135,21 @@ if zk.exists(path):
           ssh.connect(ip_address, 22, username=username, pkey=key)
           
           cmd = "iptables -C INPUT -s #{node[:ipaddress]} -j ACCEPT"
-          output_list, error_list = ssh.ssh_execute_command(cmd)
+          output_list,  stdout, error_list = ssh.ssh_execute_command(cmd)
           output = ' '.join(output_list) + ' '.join(error_list)
           print 'output:',output
           if output.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
               cmd = "/sbin/iptables -A INPUT -s #{node[:ipaddress]} -j ACCEPT" 
-              output_list, error_list = ssh.ssh_execute_command(cmd)
+              output_list,  stdout, error_list = ssh.ssh_execute_command(cmd)
           
           cmd = "iptables -C OUTPUT -d #{node[:ipaddress]} -j ACCEPT" 
-          output_list, error_list = ssh.ssh_execute_command(cmd)
+          output_list,  stdout, error_list = ssh.ssh_execute_command(cmd)
           output = ' '.join(output_list) + ' '.join(error_list)
           print 'output:',output
           if output.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
               print 'OUTPUT',server_type, ip_address, output
               cmd = "/sbin/iptables -A OUTPUT -d #{node[:ipaddress]} -j ACCEPT" 
-              output_list, error_list = ssh.ssh_execute_command(cmd)
+              output_list,  stdout, error_list = ssh.ssh_execute_command(cmd)
           
           cmd = "/etc/init.d/iptables-persistent save" 
           stdin, stdout, stderr = ssh.exec_command(cmd)
