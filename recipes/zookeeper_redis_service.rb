@@ -60,8 +60,8 @@ cookbook_file "/var/redis_cluster.py" do
   mode 00744
 end
 
-cookbook_file "/var/redis_cluster.py" do
-  source "redis_cluster.py"
+cookbook_file "/var/sentinel_cluster.py" do
+  source "sentinel_cluster.py"
   mode 00744
 end
 
