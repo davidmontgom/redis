@@ -229,7 +229,7 @@ end
 
 
 
-if datacenter!='local' and server_type=='sentinel'
+if datacenter!='local' and server_type=='sentinel111'
   script "zookeeper_add_sentinel" do
     interpreter "python"
     user "root"

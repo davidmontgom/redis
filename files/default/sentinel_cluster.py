@@ -92,30 +92,38 @@ def sentinel_cluster(args):
     if zk.exists(path):
         addresses = zk.children(path)
         ip_address_list = list(set(addresses))
-        redis_hosts = redis_hosts + ip_address_list
-        ip_address_list = list(set(kafka_hosts))
+        sentinel_hosts = sentinel_hosts + ip_address_list
+        ip_address_list = list(set(sentinel_hosts))
 
         cmd_list = []
         iptables_remote(ip_address,ip_address_list,keypair,username,cmd_list=cmd_list)
         iptables_local(ip_address,ip_address_list)
 
 
+    this_tree = str(zk.export_tree()).strip()
     if zk:
         zoo.close()
 
-
-    args.server_type = 'sentinel'
+    shard_list = []
+    tree = this_tree.splitlines()
+    
+    args.server_type = 'redis'
     args.shard = None
-
     zoo = zookeeper(args)
     zk = zoo.get_conn()
     path = zoo.get_path()
     
-    if zk.exists(path):
-        addresses = zk.children(path)
-        ip_address_list = list(set(addresses))
-        iptables_local(ip_address,ip_address_list)
-        
+    for t in tree:
+        if t.find(path)>=0:
+            shard_list.append(str(t))
+    
+    for path in shard_list:
+
+        if zk.exists(path):
+            addresses = zk.children(path)
+            ip_address_list = list(set(addresses))
+            iptables_local(ip_address,ip_address_list)
+            
     if zk:
         zoo.close()
         
