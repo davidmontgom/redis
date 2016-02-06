@@ -89,11 +89,10 @@ if "#{cluster_slug}"=="nocluster":
 else:
     node = '#{server_type}-#{slug}-{datacenter}-#{node.chef_environment}-#{location}-#{cluster_slug}-#{shard}'
 path = '/%s/' % (node)
-#Each redis server will access each other in the same shard
+redis_servers = []
 if zk.exists(path):
     addresses = zk.children(path)
     redis_servers = list(set(addresses))
-    print redis_servers
     for ip_address in redis_servers:
         if ip_address != '#{node[:ipaddress]}':
           keypair_path = '/root/.ssh/#{keypair}'
@@ -101,34 +100,50 @@ if zk.exists(path):
           ssh = paramiko.SSHClient()
           ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
           ssh.connect(ip_address, 22, username=username, pkey=key)
-          cmd = "/sbin/iptables -A INPUT -s #{node[:ipaddress]} -j ACCEPT"
-          stdin, stdout, stderr = ssh.exec_command(cmd)
-          cmd = "/sbin/iptables -A OUTPUT -d  #{node[:ipaddress]} -j ACCEPT"
-          stdin, stdout, stderr = ssh.exec_command(cmd)
+          
+          cmd = "iptables -C INPUT -s #{node[:ipaddress]} -j ACCEPT"
+          output_list, error_list = ssh.ssh_execute_command(cmd)
+          output = ' '.join(output_list) + ' '.join(error_list)
+          print 'output:',output
+          if output.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+              cmd = "/sbin/iptables -A INPUT -s #{node[:ipaddress]} -j ACCEPT" 
+              output_list, error_list = ssh.ssh_execute_command(cmd)
+          
+          cmd = "iptables -C OUTPUT -d #{node[:ipaddress]} -j ACCEPT" 
+          output_list, error_list = ssh.ssh_execute_command(cmd)
+          output = ' '.join(output_list) + ' '.join(error_list)
+          print 'output:',output
+          if output.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+              print 'OUTPUT',server_type, ip_address, output
+              cmd = "/sbin/iptables -A OUTPUT -d #{node[:ipaddress]} -j ACCEPT" 
+              output_list, error_list = ssh.ssh_execute_command(cmd)
+          
           cmd = "/etc/init.d/iptables-persistent save" 
           stdin, stdout, stderr = ssh.exec_command(cmd)
           out = stdout.read()
           err = stderr.read()
+
           ssh.close()
     
-    for ip_address in zookeeper_ip_address_list:
-        if ip_address != '#{node[:ipaddress]}':
-          cmd = "iptables -C INPUT -s %s -j ACCEPT" % (ip_address)
-          p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
-          out = p.stdout.readline().strip()
-          if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
-              cmd = "/sbin/iptables -A INPUT -s %s -j ACCEPT" % (ip_address)
-              os.system(cmd)
-              
-          cmd = "iptables -C OUTPUT -d %s -j ACCEPT" % (ip_address)
-          p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
-          out = p.stdout.readline().strip()
-          if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
-              cmd = "/sbin/iptables -A OUTPUT -d  %s -j ACCEPT" % (ip_address)
-              os.system(cmd)
+    
+for ip_address in redis_servers:
+  if ip_address != '#{node[:ipaddress]}':
+  
+    cmd = "iptables -C INPUT -s %s -j ACCEPT" % (ip_address)
+    p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
+    out = p.stdout.readline().strip()
+    if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+        cmd = "/sbin/iptables -A INPUT -s %s -j ACCEPT" % (ip_address)
+        os.system(cmd)
+        
+    cmd = "iptables -C OUTPUT -d %s -j ACCEPT" % (ip_address)
+    p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
+    out = p.stdout.readline().strip()
+    if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+        cmd = "/sbin/iptables -A OUTPUT -d  %s -j ACCEPT" % (ip_address)
+        os.system(cmd)
           
- 
-#Eash sentinal server can access this node     
+     
 if "#{cluster_slug}"=="nocluster":
     node = 'sentinel-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}'
 else:
@@ -138,6 +153,7 @@ if zk.exists(path):
     addresses = zk.children(path)
     sentinel_servers = list(set(addresses))
     for ip_address in sentinel_servers:
+    
         cmd = "iptables -C INPUT -s %s -j ACCEPT" % (ip_address)
         p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
         out = p.stdout.readline().strip()
@@ -193,42 +209,57 @@ else:
     node = 'sentinel-#{slug}-#{datacenter}-#{node.chef_environment}-#{location}-#{cluster_slug}'
 path = '/%s/' % (node)
 this_ip = '#{node[:ipaddress]}'
+sentinal_servers =[]
 if zk.exists(path):
     addresses = zk.children(path)
     sentinal_servers = list(set(addresses))
     for ip_address in sentinal_servers:
-        if ip_address != this_ip:
+        if ip_address != '#{node[:ipaddress]}':
           keypair_path = '/root/.ssh/#{keypair}'
           key = paramiko.RSAKey.from_private_key_file(keypair_path)
           ssh = paramiko.SSHClient()
           ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
           ssh.connect(ip_address, 22, username=username, pkey=key)
-          cmd = "/sbin/iptables -A INPUT -s #{node[:ipaddress]} -j ACCEPT"
-          stdin, stdout, stderr = ssh.exec_command(cmd)
-          cmd = "/sbin/iptables -A OUTPUT -d  #{node[:ipaddress]} -j ACCEPT"
-          stdin, stdout, stderr = ssh.exec_command(cmd)
+          
+          cmd = "iptables -C INPUT -s #{node[:ipaddress]} -j ACCEPT"
+          output_list, error_list = ssh.ssh_execute_command(cmd)
+          output = ' '.join(output_list) + ' '.join(error_list)
+          print 'output:',output
+          if output.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+              cmd = "/sbin/iptables -A INPUT -s #{node[:ipaddress]} -j ACCEPT" 
+              output_list, error_list = ssh.ssh_execute_command(cmd)
+          
+          cmd = "iptables -C OUTPUT -d #{node[:ipaddress]} -j ACCEPT" 
+          output_list, error_list = ssh.ssh_execute_command(cmd)
+          output = ' '.join(output_list) + ' '.join(error_list)
+          print 'output:',output
+          if output.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+              print 'OUTPUT',server_type, ip_address, output
+              cmd = "/sbin/iptables -A OUTPUT -d #{node[:ipaddress]} -j ACCEPT" 
+              output_list, error_list = ssh.ssh_execute_command(cmd)
+          
           cmd = "/etc/init.d/iptables-persistent save" 
           stdin, stdout, stderr = ssh.exec_command(cmd)
+          
           ssh.close()
           
-          cmd = "iptables -C INPUT -s %s -j ACCEPT" % (ip_address)
-          p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
-          out = p.stdout.readline().strip()
-          if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
-              cmd = "/sbin/iptables -A INPUT -s %s -j ACCEPT" % (ip_address)
-              os.system(cmd)
-              
-          cmd = "iptables -C OUTPUT -d %s -j ACCEPT" % (ip_address)
-          p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
-          out = p.stdout.readline().strip()
-          if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
-              cmd = "/sbin/iptables -A OUTPUT -d  %s -j ACCEPT" % (ip_address)
-              os.system(cmd)
           
-          
-          
-          
-          
+for ip_address in sentinal_servers:
+  if ip_address != '#{node[:ipaddress]}':         
+                   
+    cmd = "iptables -C INPUT -s %s -j ACCEPT" % (ip_address)
+    p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
+    out = p.stdout.readline().strip()
+    if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+        cmd = "/sbin/iptables -A INPUT -s %s -j ACCEPT" % (ip_address)
+        os.system(cmd)
+        
+    cmd = "iptables -C OUTPUT -d %s -j ACCEPT" % (ip_address)
+    p = subprocess.Popen(cmd, shell=True,stderr=subprocess.STDOUT,stdout=subprocess.PIPE,executable="/bin/bash")
+    out = p.stdout.readline().strip()
+    if out.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+        cmd = "/sbin/iptables -A OUTPUT -d  %s -j ACCEPT" % (ip_address)
+        os.system(cmd)
           
           
 this_tree = str(zk.export_tree()).strip()
@@ -241,6 +272,7 @@ else:
 for t in tree:
     if t.find(node)>=0:
         shard_list.append(str(t))
+        
 for node in shard_list:
   path = '/%s/' % (node)
   if zk.exists(path):
@@ -252,12 +284,28 @@ for node in shard_list:
           ssh = paramiko.SSHClient()
           ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
           ssh.connect(ip_address, 22, username=username, pkey=key)
-          cmd = "/sbin/iptables -A INPUT -s #{node[:ipaddress]} -j ACCEPT"
-          stdin, stdout, stderr = ssh.exec_command(cmd)
-          cmd = "/sbin/iptables -A OUTPUT -d  #{node[:ipaddress]} -j ACCEPT"
-          stdin, stdout, stderr = ssh.exec_command(cmd)
+          
+          cmd = "iptables -C INPUT -s #{node[:ipaddress]} -j ACCEPT"
+          output_list, error_list = ssh.ssh_execute_command(cmd)
+          output = ' '.join(output_list) + ' '.join(error_list)
+          print 'output:',output
+          if output.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+              cmd = "/sbin/iptables -A INPUT -s #{node[:ipaddress]} -j ACCEPT" 
+              output_list, error_list = ssh.ssh_execute_command(cmd)
+          
+          cmd = "iptables -C OUTPUT -d #{node[:ipaddress]} -j ACCEPT" 
+          output_list, error_list = ssh.ssh_execute_command(cmd)
+          output = ' '.join(output_list) + ' '.join(error_list)
+          print 'output:',output
+          if output.find('iptables: Bad rule (does a matching rule exist in that chain?).')>=0:
+              print 'OUTPUT',server_type, ip_address, output
+              cmd = "/sbin/iptables -A OUTPUT -d #{node[:ipaddress]} -j ACCEPT" 
+              output_list, error_list = ssh.ssh_execute_command(cmd)
+          
           cmd = "/etc/init.d/iptables-persistent save" 
           stdin, stdout, stderr = ssh.exec_command(cmd)
+          
+          
           ssh.close()
 PYCODE
   end
