@@ -14,9 +14,7 @@ end
 easy_install_package "redis" do
   action :install
 end
-easy_install_package "stopwatch" do
-  action :install
-end
+
 easy_install_package "timeout" do
   action :install
 end
@@ -32,7 +30,16 @@ easy_install_package "psutil" do
   action :install
 end
 
+package "libffi-dev" do
+  action :install
+end
+
+package "libssl-dev" do
+  action :install
+end
+
 easy_install_package "paramiko" do
+  options "-U"
   action :install
 end
 
