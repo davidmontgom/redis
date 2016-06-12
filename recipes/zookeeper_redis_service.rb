@@ -7,7 +7,7 @@ cluster_slug = File.read("/var/cluster_slug.txt")
 cluster_slug = cluster_slug.gsub(/\n/, "") 
 
 
-
+=begin
 if File.exists?("/var/shard.txt")
     if server_type=="redis" 
       shard = File.read("/var/shard.txt")
@@ -16,13 +16,13 @@ if File.exists?("/var/shard.txt")
 else
   shard='None'
 end
+=end
 
-=begin
 if server_type=="redis" 
   shard = File.read("/var/shard.txt")
   shard = shard.gsub(/\n/, "") 
 end
-=end
+
 
 data_bag("meta_data_bag")
 aws = data_bag_item("meta_data_bag", "aws")
